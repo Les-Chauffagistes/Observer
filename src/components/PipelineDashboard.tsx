@@ -4,6 +4,7 @@ import { formatRelativeTime } from "@/lib/format/time";
 import { RepoGrid } from "@/components/RepoGrid";
 import { RepoGroupSection } from "@/components/RepoGroupSection";
 import { StatusSummary } from "@/components/StatusSummary";
+import { ViewNav } from "@/components/ViewNav";
 import styles from "./PipelineDashboard.module.css";
 
 interface PipelineDashboardProps {
@@ -51,7 +52,10 @@ export function PipelineDashboard({ overview, groups }: PipelineDashboardProps) 
             {formatRelativeTime(overview.generatedAt)}
           </p>
         </div>
-        <StatusSummary summary={summary} />
+        <div className={styles.headerAside}>
+          <ViewNav active="repositories" />
+          <StatusSummary summary={summary} />
+        </div>
       </header>
 
       {visibleRepositories.length === 0 ? (

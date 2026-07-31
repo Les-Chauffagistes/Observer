@@ -62,6 +62,49 @@ knowledge.
 Example ideas already scoped for the future: glob/pattern matching for repo
 entries (e.g. exclude `*-docs`), or per-folder default-open control.
 
+## Add a new top-level view (pivot of the same data)
+
+Example (already shipped): the **pipeline-oriented** view at `/pipelines`, the
+inverse of the repository-oriented home page. It reuses the exact same
+`loadOverview()` result — **no extra GitHub calls** — by pivoting the domain
+model in a pure function. Use this recipe whenever a new page is just a
+different projection/arrangement of already-fetched data.
+
+1. **Projection (domain)** — add a pure transform + its types under
+   [`pipelines/`](../src/lib/pipelines/), e.g.
+   [`byPipeline.ts`](../src/lib/pipelines/byPipeline.ts)'s `groupByPipeline()`
+   returning `Pipeline[]`. Keep it UI-agnostic and reuse existing helpers
+   (`overallStatus`, the `STATUS_SEVERITY` ranking) so behaviour stays
+   consistent.
+2. **Summary (optional)** — if the view has a header/section count, add a
+   sibling to `summarizeRepositories` in
+   [`summary.ts`](../src/lib/pipelines/summary.ts) that returns the same
+   `OverviewSummary` shape, so `StatusSummary` renders it unchanged.
+3. **Barrel** — export the new function/types from
+   [`pipelines/index.ts`](../src/lib/pipelines/index.ts).
+4. **Components** — add a dashboard shell + a section component (reuse
+   `StatusBadge`, `StatusSummary`, native `<details>` for collapsible groups —
+   no client JS). Follow the CSS-Module conventions (one module per component,
+   pure selectors). Reusing shared shell classes across dashboards is fine:
+   import another component's `*.module.css` (see
+   [`PipelineOrientedDashboard`](../src/components/PipelineOrientedDashboard.tsx)
+   reusing `PipelineDashboard.module.css`).
+5. **Route** — add `src/app/<view>/page.tsx` with `export const dynamic =
+   "force-dynamic"`, calling `loadOverview()`, guarding `!result.ok` with
+   `SetupNotice`, then feeding the projection to the new dashboard. Derive
+   visible repositories from `result.groups` (not `overview.repositories`) so
+   the view honours `observer.config.json` hiding, exactly like the home page.
+6. **Navigation** — add the route to
+   [`ViewNav`](../src/components/ViewNav.tsx) and pass the correct `active` prop
+   from each dashboard header. `ViewNav` is a plain-link toggle (no JS).
+7. **Docs** — update the rendering tree + component catalogue in
+   [ui.md](./ui.md), add the new types to [domain-model.md](./domain-model.md),
+   and the feature bullet in the [README](../README.md).
+
+Golden rule: a new view is a **presentation concern**. Pivot in a pure
+`pipelines/` function and render it — never add a GitHub call for a view that
+rearranges data the overview already contains.
+
 ## Add a UI filter or search
 
 Filtering/searching over the already-fetched repositories is a **presentation**

@@ -54,6 +54,22 @@ Aggregated state for one repository:
 `{ repositories: RepoPipelines[]; generatedAt: string }` — the full fetch
 result, before grouping.
 
+### `Pipeline` / `PipelineRepoStatus` — [`byPipeline.ts`](../src/lib/pipelines/byPipeline.ts)
+
+The **inverse** projection of `RepoPipelines`, used by the pipeline-oriented
+view (`/pipelines`). A `Pipeline` is a workflow **name** grouped across every
+repository that runs it:
+
+- `PipelineRepoStatus` = `{ repo: RepoRef; run: PipelineRun }` — one
+  repository's latest run of that pipeline's workflow.
+- `Pipeline` = `{ name: string; repositories: PipelineRepoStatus[]; overallStatus: PipelineStatus | null }`.
+
+`groupByPipeline(repositories)` pivots `RepoPipelines[]` into `Pipeline[]`,
+keyed by `workflowName` so the same logical pipeline (e.g. `"CI"`) is grouped
+across repos despite each having a distinct numeric `workflow_id`. It reuses the
+**already-fetched** data — no extra GitHub calls. Repositories that failed to
+fetch (no runs) contribute to no pipeline.
+
 ### `PipelineGroup` — [`grouping.ts`](../src/lib/pipelines/grouping.ts)
 
 A folder: `{ name: string | null; repositories: RepoPipelines[]; defaultOpen: boolean }`.
@@ -64,6 +80,9 @@ A folder: `{ name: string | null; repositories: RepoPipelines[]; defaultOpen: bo
 
 `{ totalRepos; erroredRepos; byStatus: Record<PipelineStatus, number> }`.
 Computed by `summarizeRepositories(repos)` (and `summarizeOverview(overview)`).
+For the pipeline-oriented view, `summarizePipeline(pipeline)` /
+`summarizePipelines(pipelines)` produce the same shape, bucketing repositories
+by their per-pipeline run status.
 
 ## Status normalisation
 

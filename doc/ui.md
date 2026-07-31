@@ -5,8 +5,9 @@ JavaScript) plus **CSS Modules**. Components render domain types only — they
 never call GitHub. See [architecture.md](./architecture.md) and
 [domain-model.md](./domain-model.md).
 
-All components live in [`src/components`](../src/components); the entry point is
-[`src/app/page.tsx`](../src/app/page.tsx).
+All components live in [`src/components`](../src/components); the entry points
+are [`src/app/page.tsx`](../src/app/page.tsx) (by repository) and
+[`src/app/pipelines/page.tsx`](../src/app/pipelines/page.tsx) (by pipeline).
 
 ## Rendering tree
 
@@ -14,19 +15,45 @@ All components live in [`src/components`](../src/components); the entry point is
 app/page.tsx  (force-dynamic, async server component → loadOverview())
  ├─ SetupNotice                         when result.ok === false
  └─ PipelineDashboard  { overview, groups }
+     ├─ ViewNav  { active }             repository ⇄ pipeline toggle
      ├─ StatusSummary  { summary }      header status counts (visible repos)
      ├─ RepoGrid  { repositories }      flat view (no observer.config.json)
      └─ RepoGroupSection*  { group }    folder view (one per group)
          └─ RepoGrid → RepoPipelineCard*  { data, showOwner }
              ├─ StatusBadge  { status }         overall + per-run
              └─ (internal) CardBody → RunRow*
+
+app/pipelines/page.tsx  (force-dynamic → loadOverview() + groupByPipeline())
+ ├─ SetupNotice                         when result.ok === false
+ └─ PipelineOrientedDashboard  { overview, pipelines }
+     ├─ ViewNav  { active }             repository ⇄ pipeline toggle
+     ├─ StatusSummary  { summary }      header status counts (all pipelines)
+     └─ PipelineSection*  { pipeline }  one collapsible folder per pipeline
+         ├─ StatusBadge  { status }     overall + per-repo
+         └─ StatusSummary  { summary }  per-pipeline repo counts
 ```
+
+## Views
+
+The dashboard offers two inverse views of the same fetched data, switched via
+`ViewNav` (plain links, no JS):
+
+- **By repository** (`/`) — repositories are the top-level unit; each card lists
+  that repo's pipelines. Rendered by `PipelineDashboard`.
+- **By pipeline** (`/pipelines`) — pipelines (workflow names) are the top-level
+  unit; each collapsible section lists the repositories that run it and their
+  status. Rendered by `PipelineOrientedDashboard` via `groupByPipeline` (see
+  [domain-model.md](./domain-model.md)). No extra GitHub calls — it pivots the
+  same `loadOverview()` result.
 
 ## Component catalogue
 
 | Component                                                                    | Props                              | Responsibility                                                                 |
 | ---------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------ |
-| [`PipelineDashboard`](../src/components/PipelineDashboard.tsx)                | `overview`, `groups`               | Page shell: header, computes **visible** repos, chooses flat vs folder layout. |
+| [`PipelineDashboard`](../src/components/PipelineDashboard.tsx)                | `overview`, `groups`               | Repository view shell: header, computes **visible** repos, chooses flat vs folder layout. |
+| [`PipelineOrientedDashboard`](../src/components/PipelineOrientedDashboard.tsx) | `overview`, `pipelines`           | Pipeline view shell: header + one `PipelineSection` per pipeline.              |
+| [`PipelineSection`](../src/components/PipelineSection.tsx)                    | `pipeline`, `showOwner`, `defaultOpen` | One collapsible pipeline folder (native `<details>`) listing its repos + status. |
+| [`ViewNav`](../src/components/ViewNav.tsx)                                    | `active`                           | Repository ⇄ pipeline view toggle (plain links).                              |
 | [`RepoGroupSection`](../src/components/RepoGroupSection.tsx)                  | `group`, `showOwner`               | One collapsible folder using native `<details>` (no JS). Per-folder summary.   |
 | [`RepoGrid`](../src/components/RepoGrid.tsx)                                  | `repositories`, `showOwner`        | Responsive grid of cards. Shared by flat & folder layouts.                     |
 | [`RepoPipelineCard`](../src/components/RepoPipelineCard.tsx)                  | `data`, `showOwner?`               | One repo: title, overall badge, run list. `CardBody`/`RunRow` are internal.    |

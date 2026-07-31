@@ -1,3 +1,4 @@
+import type { Pipeline } from "@/lib/pipelines/byPipeline";
 import type {
   PipelineOverview,
   PipelineStatus,
@@ -50,4 +51,41 @@ export function summarizeRepositories(
 /** Compute headline counts for the dashboard summary bar. */
 export function summarizeOverview(overview: PipelineOverview): OverviewSummary {
   return summarizeRepositories(overview.repositories);
+}
+
+/**
+ * Compute headline counts for a single pipeline: one repository per count,
+ * bucketed by that repository's run status for this pipeline. Reuses
+ * {@link OverviewSummary} so the same {@link StatusSummary} UI renders it.
+ */
+export function summarizePipeline(pipeline: Pipeline): OverviewSummary {
+  const byStatus: Record<PipelineStatus, number> = { ...EMPTY_STATUS_COUNTS };
+
+  for (const { run } of pipeline.repositories) {
+    byStatus[run.status] += 1;
+  }
+
+  return {
+    totalRepos: pipeline.repositories.length,
+    erroredRepos: 0,
+    byStatus,
+  };
+}
+
+/** Aggregate {@link summarizePipeline} across every pipeline (header bar). */
+export function summarizePipelines(
+  pipelines: readonly Pipeline[],
+): OverviewSummary {
+  const byStatus: Record<PipelineStatus, number> = { ...EMPTY_STATUS_COUNTS };
+  let totalRepos = 0;
+
+  for (const pipeline of pipelines) {
+    const summary = summarizePipeline(pipeline);
+    totalRepos += summary.totalRepos;
+    for (const status of Object.keys(byStatus) as PipelineStatus[]) {
+      byStatus[status] += summary.byStatus[status];
+    }
+  }
+
+  return { totalRepos, erroredRepos: 0, byStatus };
 }

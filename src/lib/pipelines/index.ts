@@ -12,9 +12,13 @@ export { groupRepositories, UNGROUPED_LABEL } from "@/lib/pipelines/grouping";
 export type { PipelineGroup } from "@/lib/pipelines/grouping";
 export {
   summarizeOverview,
+  summarizePipeline,
+  summarizePipelines,
   summarizeRepositories,
 } from "@/lib/pipelines/summary";
 export type { OverviewSummary } from "@/lib/pipelines/summary";
+export { groupByPipeline } from "@/lib/pipelines/byPipeline";
+export type { Pipeline, PipelineRepoStatus } from "@/lib/pipelines/byPipeline";
 
 /**
  * Discriminated result of {@link loadOverview}. A missing/invalid configuration
