@@ -1,12 +1,39 @@
 :root {
-  --background: #ffffff;
+  --background: #f6f7f9;
   --foreground: #171717;
+  --surface: #ffffff;
+  --surface-muted: #f0f1f4;
+  --border: #e2e4e9;
+  --text-muted: #5b6270;
+
+  /* Pipeline status palette (kept in sync with statusPresentation.ts). */
+  --status-success: #1a7f37;
+  --status-failure: #cf222e;
+  --status-running: #9a6700;
+  --status-queued: #6e7781;
+  --status-cancelled: #6e7781;
+  --status-skipped: #8c959f;
+  --status-action_required: #bc4c00;
+  --status-unknown: #6e7781;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --surface: #151517;
+    --surface-muted: #1c1c20;
+    --border: #2a2a30;
+    --text-muted: #9aa1ac;
+
+    --status-success: #3fb950;
+    --status-failure: #f85149;
+    --status-running: #d29922;
+    --status-queued: #8b949e;
+    --status-cancelled: #8b949e;
+    --status-skipped: #6e7681;
+    --status-action_required: #db6d28;
+    --status-unknown: #8b949e;
   }
 }
 

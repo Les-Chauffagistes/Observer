@@ -1,0 +1,15 @@
+services:
+  observer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: observer:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_ORG=${GITHUB_ORG}
+      - GITHUB_REPOS=${GITHUB_REPOS}
+      - GITHUB_API_URL=${GITHUB_API_URL:-https://api.github.com}
+      - GITHUB_REVALIDATE_SECONDS=${GITHUB_REVALIDATE_SECONDS:-30}
+    restart: unless-stopped

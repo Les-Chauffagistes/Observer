@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Observer
 
-## Getting Started
+A Next.js dashboard that aggregates **GitHub Actions CI/CD status** across a set
+of microservice repositories, giving the single overview the GitHub UI does not.
 
-First, run the development server:
+## Features
+
+- Observe repositories from an explicit list, a whole organisation, or both.
+- Latest run per workflow, per repository, with a normalised status badge.
+- Per-repository fault isolation: one failing repo never breaks the dashboard.
+- Brief fetch-layer caching to stay within GitHub API rate limits.
+
+## Getting started
+
+1. Copy the environment template and fill it in:
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+   At minimum set `GITHUB_TOKEN` and one of `GITHUB_ORG` / `GITHUB_REPOS`.
+
+2. Run the dev server:
+
+   ```bash
+   npm run dev
+   ```
+
+3. Open <http://localhost:3000>.
+
+## Docker
+
+The app builds into a self-contained image using Next.js standalone output.
+
+Build and run with Docker directly:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+docker build -t observer:latest .
+docker run --rm -p 3000:3000 --env-file .env observer:latest
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Or use Docker Compose (reads variables from a local `.env`):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+docker compose up --build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Then open <http://localhost:3000>. All `GITHUB_*` variables are read at runtime,
+so the same image works across environments without rebuilding.
 
-## Learn More
+## Configuration
 
-To learn more about Next.js, take a look at the following resources:
+| Variable                    | Required | Description                                              |
+| --------------------------- | -------- | -------------------------------------------------------- |
+| `GITHUB_TOKEN`              | yes      | Token with Actions read access.                          |
+| `GITHUB_ORG`                | one of\* | Organisation whose repos are auto-discovered.            |
+| `GITHUB_REPOS`              | one of\* | Bare `repo` names (owner = `GITHUB_ORG`) or `owner/repo`. |
+| `GITHUB_API_URL`            | no       | API base URL (default `https://api.github.com`).         |
+| `GITHUB_REVALIDATE_SECONDS` | no       | Cache lifetime for GitHub responses (default `30`).      |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+\* At least one of `GITHUB_ORG` or `GITHUB_REPOS` must be set.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Architecture
 
-## Deploy on Vercel
+The code is organised in layers so successive additions stay easy to make:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+  lib/
+    config/      Environment parsing & validation (AppConfig).
+    github/      Typed GitHub REST client, error types, API types.
+    pipelines/   Domain model, mappers, aggregation service, composition root.
+    format/      Presentation-agnostic formatting helpers.
+  components/    Server components rendering the dashboard.
+  app/           Next.js App Router entry (page = composition + render).
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Key boundaries:
+
+- **`github/`** owns HTTP concerns only and returns raw GitHub payloads.
+- **`pipelines/`** translates those payloads into a UI-agnostic domain model
+  (`mappers.ts`), aggregates them (`service.ts`), and exposes a single
+  composition root, `loadOverview()`.
+- **`components/`** never talk to GitHub directly; they render domain types.
+
+This separation means new data sources or views can be added without touching
+the client, and the client can evolve without touching the UI.
