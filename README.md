@@ -3,6 +3,10 @@
 A Next.js dashboard that aggregates **GitHub Actions CI/CD status** across a set
 of microservice repositories, giving the single overview the GitHub UI does not.
 
+> **Documentation:** a structured knowledge base for developers and AI agents
+> lives in [`doc/`](./doc/README.md) — start there to understand or extend the
+> project without reading large amounts of code.
+
 ## Features
 
 - Observe repositories from an explicit list, a whole organisation, or both.
