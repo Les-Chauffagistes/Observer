@@ -95,7 +95,7 @@ The **only** place that maps a domain `PipelineStatus` to how it looks is
 
 - `STATUS_PRESENTATION[status]` → `{ label, colorVar, icon }`.
 - `SUMMARY_STATUSES` → the ordered subset shown in summary bars
-  (`failure, action_required, running, queued, success`).
+  (`failure, action_required, running, queued, skipped, success`).
 
 Colours are **CSS custom properties** (e.g. `--status-failure`) defined in
 [`src/app/globals.css`](../src/app/globals.css), which also defines the

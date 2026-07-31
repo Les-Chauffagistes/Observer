@@ -6,41 +6,46 @@ import type {
 import type { PipelineRun, PipelineStatus } from "@/lib/pipelines/types";
 
 /**
+ * Map a terminal outcome (`conclusion`, or a terminal value GitHub occasionally
+ * places in `status`) to a {@link PipelineStatus}.
+ */
+const TERMINAL_STATUS: Record<string, PipelineStatus> = {
+  success: "success",
+  failure: "failure",
+  timed_out: "failure",
+  startup_failure: "failure",
+  cancelled: "cancelled",
+  skipped: "skipped",
+  neutral: "skipped",
+  stale: "skipped",
+  action_required: "action_required",
+};
+
+/**
  * Collapse GitHub's `status` + `conclusion` pair into a single
- * {@link PipelineStatus}. A run is only "concluded" when `status` is
- * `completed`; otherwise it is still in flight.
+ * {@link PipelineStatus}.
+ *
+ * In-flight lifecycle states map to `queued`/`running`. Otherwise the run is
+ * concluded and we use its `conclusion`; as a safety net we also accept a
+ * terminal value carried directly in `status` (GitHub does this for some
+ * `skipped` runs) so those never fall back to `queued`/`running`.
  */
 export function toPipelineStatus(
   status: GitHubRunStatus,
   conclusion: GitHubRunConclusion | null,
 ): PipelineStatus {
-  if (status !== "completed") {
-    return status === "queued" ||
-      status === "waiting" ||
-      status === "requested" ||
-      status === "pending"
-      ? "queued"
-      : "running";
+  switch (status) {
+    case "queued":
+    case "waiting":
+    case "requested":
+    case "pending":
+      return "queued";
+    case "in_progress":
+      return "running";
   }
 
-  switch (conclusion) {
-    case "success":
-      return "success";
-    case "failure":
-    case "timed_out":
-    case "startup_failure":
-      return "failure";
-    case "cancelled":
-      return "cancelled";
-    case "skipped":
-    case "neutral":
-    case "stale":
-      return "skipped";
-    case "action_required":
-      return "action_required";
-    default:
-      return "unknown";
-  }
+  const terminal = conclusion ?? status;
+  return TERMINAL_STATUS[terminal] ?? "unknown";
 }
 
 /** Project a raw GitHub workflow run into the domain model. */

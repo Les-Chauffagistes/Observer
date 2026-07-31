@@ -13,8 +13,10 @@
 }
 
 .dot {
-  width: 0.65rem;
-  height: 0.65rem;
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  flex: none;
   border-radius: 50%;
 }
 

@@ -15,6 +15,7 @@ export const SUMMARY_STATUSES: readonly PipelineStatus[] = [
   "action_required",
   "running",
   "queued",
+  "skipped",
   "success",
 ];
 

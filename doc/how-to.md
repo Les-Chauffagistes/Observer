@@ -143,5 +143,12 @@ Flag this refactor explicitly when it arrives — see the note in
 - **Config errors are data**: return them via `OverviewResult`
   (`{ ok: false, reason: "config" }`) so [`SetupNotice`](../src/components/SetupNotice.tsx)
   can render — don't throw for expected misconfiguration.
+- **Round status dots**: size dots in **whole pixels** (`width: 10px; height: 10px`),
+  not fractional `rem`. `0.6rem` = 9.6px rounds to different device pixels on
+  each axis depending on position (10×9), producing an oval; integer px sizes
+  land exactly and stay circular. Use `flex: none` so a flex row never resizes
+  them. See
+  [`StatusSummary.module.css`](../src/components/StatusSummary.module.css) /
+  [`StatusBadge.module.css`](../src/components/StatusBadge.module.css).
 - **Dedup key**: use `repoRefKey` ([`github/repo.ts`](../src/lib/github/repo.ts))
   for any repo comparison; it is case-insensitive.
