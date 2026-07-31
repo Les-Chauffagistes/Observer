@@ -72,9 +72,32 @@ fetch (no runs) contribute to no pipeline.
 
 ### `PipelineGroup` — [`grouping.ts`](../src/lib/pipelines/grouping.ts)
 
-A folder: `{ name: string | null; repositories: RepoPipelines[]; defaultOpen: boolean }`.
+A folder: `{ name: string | null; repositories: readonly T[]; defaultOpen: boolean }`,
+generic over the per-repository payload `T` (default `RepoPipelines`).
 `name: null` is the implicit "everything" group used when no
-`observer.config.json` exists (rendered as a flat grid, not a folder).
+`observer.config.json` exists (rendered as a flat grid, not a folder). The
+branch-oriented view reuses the same folders with `T = RepoBranchPipelines`.
+
+### `BranchPipelines` / `RepoBranchPipelines` / `BranchOverview` — [`byBranch.ts`](../src/lib/pipelines/byBranch.ts)
+
+The **branch-oriented** projection, used by `/branches`. Unlike `RepoPipelines`
+(latest run per workflow across all branches), this keeps the latest run per
+workflow **within each branch**, so a feature-branch run is not masked by a
+later run of the same workflow on `develop`/`main`.
+
+- `BranchPipelines` = `{ branch: string; runs: PipelineRun[]; overallStatus: PipelineStatus | null }`
+  — latest run per workflow on one branch, newest first.
+- `RepoBranchPipelines` = `{ repo: RepoRef; branches: BranchPipelines[]; error: string | null }`
+  — a repository's **unmerged** branches (those not merged into an integration
+  branch). Same per-repo fault isolation as `RepoPipelines`.
+- `BranchOverview` = `{ repositories: RepoBranchPipelines[]; generatedAt: string }`.
+
+`groupRunsByBranch(runs)` pivots `PipelineRun[]` into `BranchPipelines[]` (pure).
+Which branches are **unmerged** is decided in
+[`service.ts`](../src/lib/pipelines/service.ts) via GitHub's compare API — a
+branch is dropped when it is fully merged (`ahead_by === 0`) into any existing
+integration branch (`INTEGRATION_BRANCHES = develop | main | master`). Helpers:
+`isIntegrationBranch`, `sortBranches`, `countBranches`, `withUnmergedBranches`.
 
 ### `OverviewSummary` — [`summary.ts`](../src/lib/pipelines/summary.ts)
 
@@ -82,7 +105,9 @@ A folder: `{ name: string | null; repositories: RepoPipelines[]; defaultOpen: bo
 Computed by `summarizeRepositories(repos)` (and `summarizeOverview(overview)`).
 For the pipeline-oriented view, `summarizePipeline(pipeline)` /
 `summarizePipelines(pipelines)` produce the same shape, bucketing repositories
-by their per-pipeline run status.
+by their per-pipeline run status. For the branch-oriented view,
+`summarizeBranches(repos)` buckets **unmerged branches** by their overall
+status (`totalRepos` then carries the total branch count).
 
 ## Status normalisation
 

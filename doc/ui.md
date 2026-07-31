@@ -6,8 +6,9 @@ never call GitHub. See [architecture.md](./architecture.md) and
 [domain-model.md](./domain-model.md).
 
 All components live in [`src/components`](../src/components); the entry points
-are [`src/app/page.tsx`](../src/app/page.tsx) (by repository) and
-[`src/app/pipelines/page.tsx`](../src/app/pipelines/page.tsx) (by pipeline).
+are [`src/app/page.tsx`](../src/app/page.tsx) (by repository),
+[`src/app/pipelines/page.tsx`](../src/app/pipelines/page.tsx) (by pipeline) and
+[`src/app/branches/page.tsx`](../src/app/branches/page.tsx) (by branch).
 
 ## Rendering tree
 
@@ -15,7 +16,7 @@ are [`src/app/page.tsx`](../src/app/page.tsx) (by repository) and
 app/page.tsx  (force-dynamic, async server component → loadOverview())
  ├─ SetupNotice                         when result.ok === false
  └─ PipelineDashboard  { overview, groups }
-     ├─ ViewNav  { active }             repository ⇄ pipeline toggle
+     ├─ ViewNav  { active }             repository ⇄ pipeline ⇄ branch toggle
      ├─ StatusSummary  { summary }      header status counts (visible repos)
      ├─ RepoGrid  { repositories }      flat view (no observer.config.json)
      └─ RepoGroupSection*  { group }    folder view (one per group)
@@ -26,16 +27,26 @@ app/page.tsx  (force-dynamic, async server component → loadOverview())
 app/pipelines/page.tsx  (force-dynamic → loadOverview() + groupByPipeline())
  ├─ SetupNotice                         when result.ok === false
  └─ PipelineOrientedDashboard  { overview, pipelines }
-     ├─ ViewNav  { active }             repository ⇄ pipeline toggle
+     ├─ ViewNav  { active }             repository ⇄ pipeline ⇄ branch toggle
      ├─ StatusSummary  { summary }      header status counts (all pipelines)
      └─ PipelineSection*  { pipeline }  one collapsible folder per pipeline
          ├─ StatusBadge  { status }     overall + per-repo
          └─ StatusSummary  { summary }  per-pipeline repo counts
+
+app/branches/page.tsx  (force-dynamic → loadBranchOverview())
+ ├─ SetupNotice                         when result.ok === false
+ └─ BranchDashboard  { overview, groups }
+     ├─ ViewNav  { active }             repository ⇄ pipeline ⇄ branch toggle
+     ├─ StatusSummary  { summary }      header status counts (unmerged branches)
+     ├─ BranchGrid  { repositories }    flat view (no observer.config.json)
+     └─ BranchGroupSection*  { group }  folder view (one per group)
+         └─ BranchGrid → RepoBranchCard*  { data, showOwner }
+             └─ (internal) BranchBlock* → StatusBadge + RunRow*
 ```
 
 ## Views
 
-The dashboard offers two inverse views of the same fetched data, switched via
+The dashboard offers three views of the same fetched data, switched via
 `ViewNav` (plain links, no JS):
 
 - **By repository** (`/`) — repositories are the top-level unit; each card lists
@@ -45,6 +56,11 @@ The dashboard offers two inverse views of the same fetched data, switched via
   status. Rendered by `PipelineOrientedDashboard` via `groupByPipeline` (see
   [domain-model.md](./domain-model.md)). No extra GitHub calls — it pivots the
   same `loadOverview()` result.
+- **By branch** (`/branches`) — per repository, the branches **not yet merged**
+  into `develop`/`main`/`master`, each with its own runs. Rendered by
+  `BranchDashboard` from `loadBranchOverview()`. Unlike the other two views this
+  one **does** make extra GitHub calls (branch listing + compare) to determine
+  merge status; see [architecture.md](./architecture.md).
 
 ## Component catalogue
 
@@ -52,11 +68,15 @@ The dashboard offers two inverse views of the same fetched data, switched via
 | ---------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------ |
 | [`PipelineDashboard`](../src/components/PipelineDashboard.tsx)                | `overview`, `groups`               | Repository view shell: header, computes **visible** repos, chooses flat vs folder layout. |
 | [`PipelineOrientedDashboard`](../src/components/PipelineOrientedDashboard.tsx) | `overview`, `pipelines`           | Pipeline view shell: header + one `PipelineSection` per pipeline.              |
+| [`BranchDashboard`](../src/components/BranchDashboard.tsx)                    | `overview`, `groups`               | Branch view shell: header, flat vs folder layout of `RepoBranchCard`s.        |
 | [`PipelineSection`](../src/components/PipelineSection.tsx)                    | `pipeline`, `showOwner`, `defaultOpen` | One collapsible pipeline folder (native `<details>`) listing its repos + status. |
-| [`ViewNav`](../src/components/ViewNav.tsx)                                    | `active`                           | Repository ⇄ pipeline view toggle (plain links).                              |
+| [`ViewNav`](../src/components/ViewNav.tsx)                                    | `active`                           | Repository ⇄ pipeline ⇄ branch view toggle (plain links).                     |
 | [`RepoGroupSection`](../src/components/RepoGroupSection.tsx)                  | `group`, `showOwner`               | One collapsible folder using native `<details>` (no JS). Per-folder summary.   |
+| [`BranchGroupSection`](../src/components/BranchGroupSection.tsx)              | `group`, `showOwner`               | Branch-view folder (native `<details>`), summarised by unmerged branches.      |
 | [`RepoGrid`](../src/components/RepoGrid.tsx)                                  | `repositories`, `showOwner`        | Responsive grid of cards. Shared by flat & folder layouts.                     |
+| [`BranchGrid`](../src/components/BranchGrid.tsx)                              | `repositories`, `showOwner`        | Responsive grid of `RepoBranchCard`s. Shared by flat & folder layouts.         |
 | [`RepoPipelineCard`](../src/components/RepoPipelineCard.tsx)                  | `data`, `showOwner?`               | One repo: title, overall badge, run list. `CardBody`/`RunRow` are internal.    |
+| [`RepoBranchCard`](../src/components/RepoBranchCard.tsx)                      | `data`, `showOwner?`               | One repo's unmerged branches, each with a status badge + its runs.             |
 | [`StatusBadge`](../src/components/StatusBadge.tsx)                            | `status`, `compact?`               | Coloured badge (or dot) for a `PipelineStatus`.                                 |
 | [`StatusSummary`](../src/components/StatusSummary.tsx)                        | `summary`, `hideZeros?`            | Inline list of status dots + counts. Shared by header and folders.             |
 | [`SetupNotice`](../src/components/SetupNotice.tsx)                            | `message`                          | Shown when configuration is missing/invalid.                                   |

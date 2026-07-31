@@ -1,5 +1,7 @@
 import { GitHubApiError } from "@/lib/github/errors";
 import type {
+  GitHubBranch,
+  GitHubComparison,
   GitHubRepo,
   GitHubWorkflowRun,
   GitHubWorkflowRunsResponse,
@@ -74,6 +76,42 @@ export class GitHubClient {
     return [...response.workflow_runs];
   }
 
+  /**
+   * List a repository's branches, following pagination. Returns every branch;
+   * filtering (e.g. dropping integration branches) is a caller concern.
+   */
+  async listBranches(repo: RepoRef, perPage = 100): Promise<GitHubBranch[]> {
+    const branches: GitHubBranch[] = [];
+
+    for (let page = 1; ; page += 1) {
+      const batch = await this.get<GitHubBranch[]>(
+        `/repos/${repo.owner}/${repo.name}/branches`,
+        { searchParams: { per_page: perPage, page } },
+      );
+      branches.push(...batch);
+      if (batch.length < perPage) break;
+    }
+
+    return branches;
+  }
+
+  /**
+   * Compare two branches (`base...head`). The `ahead_by` field reveals whether
+   * `head` is fully merged into `base` (see {@link GitHubComparison}). Only the
+   * counts are needed, so the commit list is trimmed to one entry.
+   */
+  async compareBranches(
+    repo: RepoRef,
+    base: string,
+    head: string,
+  ): Promise<GitHubComparison> {
+    const basehead = `${encodeRef(base)}...${encodeRef(head)}`;
+    return this.get<GitHubComparison>(
+      `/repos/${repo.owner}/${repo.name}/compare/${basehead}`,
+      { searchParams: { per_page: 1 } },
+    );
+  }
+
   private async get<T>(path: string, options: RequestOptions = {}): Promise<T> {
     const url = new URL(`${this.baseUrl}${path}`);
     for (const [key, value] of Object.entries(options.searchParams ?? {})) {
@@ -99,6 +137,14 @@ export class GitHubClient {
 
     return (await response.json()) as T;
   }
+}
+
+/**
+ * Percent-encode a git ref for use in a URL path, preserving `/` separators
+ * (branch names such as `feature/foo` are valid path segments).
+ */
+function encodeRef(ref: string): string {
+  return ref.split("/").map(encodeURIComponent).join("/");
 }
 
 /** Build a human-readable message from a failed GitHub response. */

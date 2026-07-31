@@ -1,5 +1,6 @@
 import type { GroupsConfig } from "@/lib/config/groups";
 import { repoRefKey } from "@/lib/github/repo";
+import type { RepoRef } from "@/lib/github/types";
 import type { RepoPipelines } from "@/lib/pipelines/types";
 
 /** Folder name used for organisation repositories not listed in any group. */
@@ -9,10 +10,13 @@ export const UNGROUPED_LABEL = "Other";
  * A folder in the dashboard: a named set of repositories. A `name` of `null`
  * denotes the implicit "everything" group used when no configuration exists —
  * the dashboard renders it as a plain grid without folder chrome.
+ *
+ * Generic over the per-repository payload so the same folder logic serves both
+ * the repository-oriented ({@link RepoPipelines}) and branch-oriented views.
  */
-export interface PipelineGroup {
+export interface PipelineGroup<T extends { readonly repo: RepoRef } = RepoPipelines> {
   readonly name: string | null;
-  readonly repositories: readonly RepoPipelines[];
+  readonly repositories: readonly T[];
   /** Whether the folder is expanded by default in the UI. */
   readonly defaultOpen: boolean;
 }
@@ -28,22 +32,22 @@ export interface PipelineGroup {
  * A configured repository that was not fetched is simply omitted from its
  * folder; a repository is never shown in more than one folder.
  */
-export function groupRepositories(
-  repositories: readonly RepoPipelines[],
+export function groupRepositories<T extends { readonly repo: RepoRef }>(
+  repositories: readonly T[],
   config: GroupsConfig | null,
-): PipelineGroup[] {
+): PipelineGroup<T>[] {
   if (!config) {
     return [{ name: null, repositories, defaultOpen: true }];
   }
 
-  const byKey = new Map<string, RepoPipelines>();
+  const byKey = new Map<string, T>();
   for (const repo of repositories) {
     byKey.set(repoRefKey(repo.repo), repo);
   }
 
   const assigned = new Set<string>();
-  const groups: PipelineGroup[] = config.groups.map((group) => {
-    const members: RepoPipelines[] = [];
+  const groups: PipelineGroup<T>[] = config.groups.map((group) => {
+    const members: T[] = [];
     for (const ref of group.repos) {
       const key = repoRefKey(ref);
       const found = byKey.get(key);

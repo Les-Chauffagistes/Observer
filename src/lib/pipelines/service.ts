@@ -2,12 +2,23 @@ import type { AppConfig } from "@/lib/config";
 import { GitHubApiError } from "@/lib/github/errors";
 import type { GitHubClient } from "@/lib/github/client";
 import { repoRefKey } from "@/lib/github/repo";
-import type { RepoRef } from "@/lib/github/types";
+import type { GitHubBranch, RepoRef } from "@/lib/github/types";
+import {
+  groupRunsByBranch,
+  isIntegrationBranch,
+  sortBranches,
+} from "@/lib/pipelines/byBranch";
 import {
   latestRunPerWorkflow,
   overallStatus,
+  toPipelineRun,
 } from "@/lib/pipelines/mappers";
-import type { PipelineOverview, RepoPipelines } from "@/lib/pipelines/types";
+import type {
+  BranchOverview,
+  PipelineOverview,
+  RepoBranchPipelines,
+  RepoPipelines,
+} from "@/lib/pipelines/types";
 
 /** Options controlling which repositories an overview covers. */
 export interface OverviewOptions {
@@ -89,6 +100,103 @@ export async function getPipelineOverview(
   const repos = await resolveRepositories(client, config, options);
   const repositories = await Promise.all(
     repos.map((repo) => fetchRepoPipelines(client, repo)),
+  );
+
+  return { repositories, generatedAt: new Date().toISOString() };
+}
+
+/**
+ * How many recent runs to inspect when building the branch view. A branch is
+ * only surfaced if it appears among these runs, so this must be generous enough
+ * to reach past a busy default branch to the feature branches behind it.
+ */
+const BRANCH_VIEW_RUN_LIMIT = 100;
+
+/**
+ * Fetch a single repository's branch-oriented pipeline state, isolating
+ * failures. Feature branches already merged into an integration branch
+ * (`develop`/`main`/`master`) are dropped, so only branches with outstanding,
+ * unmerged work remain.
+ */
+async function fetchRepoBranchPipelines(
+  client: GitHubClient,
+  repo: RepoRef,
+): Promise<RepoBranchPipelines> {
+  try {
+    const [rawRuns, allBranches] = await Promise.all([
+      client.listWorkflowRuns(repo, BRANCH_VIEW_RUN_LIMIT),
+      client.listBranches(repo),
+    ]);
+
+    const existingBranches = new Set(allBranches.map((branch) => branch.name));
+    const bases = integrationBases(allBranches);
+
+    // Candidate feature branches: they have runs, still exist, and are not
+    // themselves an integration branch.
+    const candidates = groupRunsByBranch(rawRuns.map(toPipelineRun)).filter(
+      (branch) =>
+        existingBranches.has(branch.branch) &&
+        !isIntegrationBranch(branch.branch),
+    );
+
+    const mergedFlags = await Promise.all(
+      candidates.map((branch) =>
+        isBranchMerged(client, repo, branch.branch, bases),
+      ),
+    );
+    const unmerged = candidates.filter((_, index) => !mergedFlags[index]);
+
+    return { repo, branches: sortBranches(unmerged), error: null };
+  } catch (error) {
+    return { repo, branches: [], error: describeFetchError(error) };
+  }
+}
+
+/** The integration branches that actually exist in the repository. */
+function integrationBases(branches: readonly GitHubBranch[]): string[] {
+  return branches
+    .map((branch) => branch.name)
+    .filter((name) => isIntegrationBranch(name));
+}
+
+/**
+ * Whether `head` is fully merged into any existing integration branch. A branch
+ * is merged into a base when the base contains all of its commits
+ * (`ahead_by === 0`). Comparison failures are treated as "not merged" so that a
+ * transient error never hides real, unmerged work.
+ */
+async function isBranchMerged(
+  client: GitHubClient,
+  repo: RepoRef,
+  head: string,
+  bases: readonly string[],
+): Promise<boolean> {
+  for (const base of bases) {
+    if (base === head) continue;
+    try {
+      const comparison = await client.compareBranches(repo, base, head);
+      if (comparison.ahead_by === 0) return true;
+    } catch {
+      // Ignore and try the next base; default is to keep the branch visible.
+    }
+  }
+  return false;
+}
+
+/**
+ * Build the branch-oriented overview: resolve repositories, then fetch each
+ * one's unmerged-branch pipeline state in parallel. Like
+ * {@link getPipelineOverview}, a single repository's failure is reported inline
+ * via {@link RepoBranchPipelines.error} rather than failing the whole overview.
+ */
+export async function getBranchOverview(
+  client: GitHubClient,
+  config: AppConfig,
+  options: OverviewOptions = {},
+): Promise<BranchOverview> {
+  const repos = await resolveRepositories(client, config, options);
+  const repositories = await Promise.all(
+    repos.map((repo) => fetchRepoBranchPipelines(client, repo)),
   );
 
   return { repositories, generatedAt: new Date().toISOString() };

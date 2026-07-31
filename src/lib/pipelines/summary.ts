@@ -2,6 +2,7 @@ import type { Pipeline } from "@/lib/pipelines/byPipeline";
 import type {
   PipelineOverview,
   PipelineStatus,
+  RepoBranchPipelines,
   RepoPipelines,
 } from "@/lib/pipelines/types";
 
@@ -51,6 +52,30 @@ export function summarizeRepositories(
 /** Compute headline counts for the dashboard summary bar. */
 export function summarizeOverview(overview: PipelineOverview): OverviewSummary {
   return summarizeRepositories(overview.repositories);
+}
+
+/**
+ * Compute headline counts for the branch-oriented view: one entry per unmerged
+ * branch, bucketed by that branch's overall status. `totalRepos` carries the
+ * total number of unmerged branches so the shared {@link OverviewSummary} shape
+ * still describes the collection being summarised.
+ */
+export function summarizeBranches(
+  repositories: readonly RepoBranchPipelines[],
+): OverviewSummary {
+  const byStatus: Record<PipelineStatus, number> = { ...EMPTY_STATUS_COUNTS };
+  let totalBranches = 0;
+  let erroredRepos = 0;
+
+  for (const repo of repositories) {
+    if (repo.error !== null) erroredRepos += 1;
+    for (const branch of repo.branches) {
+      totalBranches += 1;
+      if (branch.overallStatus) byStatus[branch.overallStatus] += 1;
+    }
+  }
+
+  return { totalRepos: totalBranches, erroredRepos, byStatus };
 }
 
 /**

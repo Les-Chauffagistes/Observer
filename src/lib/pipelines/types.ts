@@ -52,3 +52,35 @@ export interface PipelineOverview {
   readonly repositories: readonly RepoPipelines[];
   readonly generatedAt: string;
 }
+
+/**
+ * Pipeline state for a single branch: the latest run per workflow observed on
+ * that branch. Used by the branch-oriented view, where the default-branch run
+ * of a workflow no longer masks the same workflow's run on a feature branch.
+ */
+export interface BranchPipelines {
+  readonly branch: string;
+  /** Latest run per workflow on this branch, newest first. */
+  readonly runs: readonly PipelineRun[];
+  /** Most actionable status across the branch's workflows (`null` if none). */
+  readonly overallStatus: PipelineStatus | null;
+}
+
+/**
+ * A repository's branches that are **not yet merged** into an integration
+ * branch (`develop`/`main`/`master`), each with its own pipeline state. This is
+ * the unit of the branch-oriented view.
+ */
+export interface RepoBranchPipelines {
+  readonly repo: RepoRef;
+  /** Unmerged branches with runs, most actionable first. Empty on error. */
+  readonly branches: readonly BranchPipelines[];
+  /** Set when the repository could not be fetched; `branches` is then empty. */
+  readonly error: string | null;
+}
+
+/** Full branch-oriented payload: every observed repository plus fetch metadata. */
+export interface BranchOverview {
+  readonly repositories: readonly RepoBranchPipelines[];
+  readonly generatedAt: string;
+}

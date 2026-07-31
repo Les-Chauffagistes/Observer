@@ -75,3 +75,31 @@ export interface GitHubWorkflowRunsResponse {
   readonly total_count: number;
   readonly workflow_runs: readonly GitHubWorkflowRun[];
 }
+
+/** `branches[]` item from `GET /repos/{owner}/{repo}/branches` (partial). */
+export interface GitHubBranch {
+  readonly name: string;
+  readonly commit: { readonly sha: string };
+  readonly protected: boolean;
+}
+
+/** Relationship of `head` to `base` in a comparison. */
+export type GitHubComparisonStatus =
+  | "diverged"
+  | "ahead"
+  | "behind"
+  | "identical";
+
+/**
+ * `GET /repos/{owner}/{repo}/compare/{base}...{head}` (partial).
+ *
+ * `ahead_by` counts commits present in `head` but not in `base`; a value of `0`
+ * means every commit of `head` is already contained in `base` (i.e. `head` is
+ * fully merged into `base`).
+ */
+export interface GitHubComparison {
+  readonly status: GitHubComparisonStatus;
+  readonly ahead_by: number;
+  readonly behind_by: number;
+  readonly total_commits: number;
+}

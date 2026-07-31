@@ -33,12 +33,19 @@ Constructed with `{ token, baseUrl, revalidateSeconds }`
 | ------------------------------------ | ---------------------------------------------------- | --------------------------- |
 | `listOrgRepos(org)`                  | `GET /orgs/{org}/repos` (paginated, `per_page=100`)  | `GitHubRepo[]`              |
 | `listWorkflowRuns(repo, perPage=30)` | `GET /repos/{owner}/{repo}/actions/runs`             | `GitHubWorkflowRun[]`       |
+| `listBranches(repo, perPage=100)`    | `GET /repos/{owner}/{repo}/branches` (paginated)     | `GitHubBranch[]`            |
+| `compareBranches(repo, base, head)`  | `GET /repos/{owner}/{repo}/compare/{base}...{head}`  | `GitHubComparison`          |
 
 - `listOrgRepos` follows pagination until a short page is returned. Archived /
   disabled filtering is **not** done here — it is a caller concern (see
   `resolveRepositories` in [`service.ts`](../src/lib/pipelines/service.ts)).
 - `listWorkflowRuns` returns GitHub's newest-first order, which
   `latestRunPerWorkflow` relies on.
+- `listBranches` + `compareBranches` power the **by branch** view: candidate
+  feature branches come from recent runs, and `compareBranches` decides whether
+  each is merged (`ahead_by === 0`) into an integration branch. Ref names are
+  percent-encoded per path segment (slashes preserved) and only the comparison
+  counts are needed (`per_page=1`).
 
 ## Error handling
 
@@ -67,7 +74,8 @@ never a crashed dashboard.
 [`types.ts`](../src/lib/github/types.ts) contains **hand-written, narrow**
 typings for only the fields Observer consumes (rather than a full SDK). Key
 types: `GitHubRepo`, `GitHubWorkflowRun`, `GitHubWorkflowRunsResponse`,
-`GitHubRunStatus`, `GitHubRunConclusion`, `GitHubActor`, and `RepoRef`.
+`GitHubRunStatus`, `GitHubRunConclusion`, `GitHubActor`, `GitHubBranch`,
+`GitHubComparison`, and `RepoRef`.
 
 > When you add a field to a request, extend the matching type here, then map it
 > in [`mappers.ts`](../src/lib/pipelines/mappers.ts). See the recipe in

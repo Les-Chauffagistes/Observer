@@ -10,8 +10,11 @@ of microservice repositories, giving the single overview the GitHub UI does not.
 ## Features
 
 - Observe repositories from an explicit list, a whole organisation, or both.
-- Two inverse views of the same data: **by repository** (`/`) or **by pipeline**
-  (`/pipelines`), toggled from the header.
+- Three views of the same data: **by repository** (`/`), **by pipeline**
+  (`/pipelines`), or **by branch** (`/branches`), toggled from the header.
+- The **by branch** view lists, per repository, the branches not yet merged into
+  `develop`/`main`/`master` and each branch's runs — so a feature branch's
+  result is never masked by a later run on the default branch.
 - Organise repositories into collapsible **folders** and hide irrelevant ones
   (`observer.config.json`).
 - Latest run per workflow, per repository, with a normalised status badge.
