@@ -6,6 +6,8 @@ of microservice repositories, giving the single overview the GitHub UI does not.
 ## Features
 
 - Observe repositories from an explicit list, a whole organisation, or both.
+- Organise repositories into collapsible **folders** and hide irrelevant ones
+  (`observer.config.json`).
 - Latest run per workflow, per repository, with a normalised status badge.
 - Per-repository fault isolation: one failing repo never breaks the dashboard.
 - Brief fetch-layer caching to stay within GitHub API rate limits.
@@ -58,7 +60,33 @@ so the same image works across environments without rebuilding.
 | `GITHUB_API_URL`            | no       | API base URL (default `https://api.github.com`).         |
 | `GITHUB_REVALIDATE_SECONDS` | no       | Cache lifetime for GitHub responses (default `30`).      |
 
-\* At least one of `GITHUB_ORG` or `GITHUB_REPOS` must be set.
+\* At least one repository source must exist: `GITHUB_ORG`, `GITHUB_REPOS`, or a
+group in `observer.config.json`.
+
+## Folders (`observer.config.json`)
+
+To organise the view — and filter out repositories that are not relevant —
+create an optional `observer.config.json` at the project root
+(see `observer.config.example.json`):
+
+```json
+{
+  "includeUngrouped": true,
+  "groups": [
+    { "name": "Microservices", "repos": ["auth-service", "coins-service"] },
+    { "name": "Frontends", "repos": ["pool-site"] }
+  ]
+}
+```
+
+- Each group becomes a collapsible folder, in the order listed.
+- Repository names may be bare (owner defaults to `GITHUB_ORG`) or `owner/repo`.
+  Repositories referenced here are always observed, even outside the org.
+- `includeUngrouped` (default `true`) controls repositories not in any group:
+  they appear in a collapsed **Other** folder, or are hidden entirely when set
+  to `false`.
+
+The file is optional; without it the dashboard shows a single flat grid.
 
 ## Architecture
 
@@ -67,9 +95,9 @@ The code is organised in layers so successive additions stay easy to make:
 ```
 src/
   lib/
-    config/      Environment parsing & validation (AppConfig).
+    config/      Environment + observer.config.json parsing & validation.
     github/      Typed GitHub REST client, error types, API types.
-    pipelines/   Domain model, mappers, aggregation service, composition root.
+    pipelines/   Domain model, mappers, aggregation, grouping, composition root.
     format/      Presentation-agnostic formatting helpers.
   components/    Server components rendering the dashboard.
   app/           Next.js App Router entry (page = composition + render).

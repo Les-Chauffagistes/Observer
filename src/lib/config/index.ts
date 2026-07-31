@@ -34,10 +34,45 @@ const DEFAULT_API_BASE_URL = "https://api.github.com";
 const DEFAULT_REVALIDATE_SECONDS = 30;
 
 /**
- * Parse a comma/whitespace separated list of repository entries. Each entry is
- * either a full `owner/repo` or a bare `repo` name, in which case it resolves
- * against `defaultOwner` (typically the configured organisation).
- * Invalid entries are rejected with a descriptive {@link ConfigError}.
+/**
+ * Resolve a single repository entry, either a full `owner/repo` or a bare
+ * `repo` name that falls back to `defaultOwner`.
+ *
+ * @param source label used in error messages (e.g. `GITHUB_REPOS`).
+ * @throws {ConfigError} when the entry is malformed or lacks a resolvable owner.
+ */
+export function resolveRepoEntry(
+  entry: string,
+  defaultOwner: string | null,
+  source: string,
+): RepoRef {
+  const parts = entry.split("/");
+
+  if (parts.length === 1) {
+    const [name] = parts;
+    if (!name) {
+      throw new ConfigError(`Empty repository entry in ${source}.`);
+    }
+    if (!defaultOwner) {
+      throw new ConfigError(
+        `Repository "${entry}" in ${source} has no owner. Set GITHUB_ORG or use "owner/repo".`,
+      );
+    }
+    return { owner: defaultOwner, name };
+  }
+
+  const [owner, name, ...rest] = parts;
+  if (!owner || !name || rest.length > 0) {
+    throw new ConfigError(
+      `Invalid repository "${entry}" in ${source}. Expected "owner/repo" or "repo".`,
+    );
+  }
+  return { owner, name };
+}
+
+/**
+ * Parse a comma/whitespace separated list of repository entries (see
+ * {@link resolveRepoEntry}).
  */
 function parseRepoList(
   raw: string | undefined,
@@ -49,27 +84,7 @@ function parseRepoList(
     .split(/[\s,]+/)
     .map((entry) => entry.trim())
     .filter(Boolean)
-    .map((entry) => {
-      const parts = entry.split("/");
-
-      if (parts.length === 1) {
-        const [name] = parts;
-        if (!defaultOwner) {
-          throw new ConfigError(
-            `Repository "${entry}" in GITHUB_REPOS has no owner. Set GITHUB_ORG or use "owner/repo".`,
-          );
-        }
-        return { owner: defaultOwner, name };
-      }
-
-      const [owner, name, ...rest] = parts;
-      if (!owner || !name || rest.length > 0) {
-        throw new ConfigError(
-          `Invalid repository "${entry}" in GITHUB_REPOS. Expected "owner/repo" or "repo".`,
-        );
-      }
-      return { owner, name };
-    });
+    .map((entry) => resolveRepoEntry(entry, defaultOwner, "GITHUB_REPOS"));
 }
 
 function parseRevalidate(raw: string | undefined): number {
@@ -86,8 +101,11 @@ function parseRevalidate(raw: string | undefined): number {
 /**
  * Load and validate the application configuration from `process.env`.
  *
- * @throws {ConfigError} when the token is missing or no repository source is
- * configured, or when a value is malformed.
+ * Note: this does not enforce that a repository source exists — repositories may
+ * also come from `observer.config.json` groups, so that check lives in the
+ * composition root (`loadOverview`).
+ *
+ * @throws {ConfigError} when the token is missing or a value is malformed.
  */
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const token = env.GITHUB_TOKEN?.trim();
@@ -99,12 +117,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
 
   const org = env.GITHUB_ORG?.trim() || null;
   const repos = parseRepoList(env.GITHUB_REPOS, org);
-
-  if (!org && repos.length === 0) {
-    throw new ConfigError(
-      "No repositories configured. Set GITHUB_ORG and/or GITHUB_REPOS.",
-    );
-  }
 
   return {
     apiBaseUrl: env.GITHUB_API_URL?.trim() || DEFAULT_API_BASE_URL,

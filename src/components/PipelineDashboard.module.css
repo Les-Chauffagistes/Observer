@@ -43,37 +43,9 @@
   font-size: 0.85rem;
 }
 
-.summary {
+.folders {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  list-style: none;
-}
-
-.summaryItem {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.85rem;
-}
-
-.summaryDot {
-  width: 0.65rem;
-  height: 0.65rem;
-  border-radius: 50%;
-}
-
-.summaryCount {
-  font-weight: 700;
-}
-
-.summaryLabel {
-  color: var(--text-muted);
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  flex-direction: column;
   gap: 1rem;
 }
 

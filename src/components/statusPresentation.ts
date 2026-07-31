@@ -9,6 +9,15 @@ export interface StatusPresentation {
   readonly icon: string;
 }
 
+/** Statuses surfaced in summary bars, in display (priority) order. */
+export const SUMMARY_STATUSES: readonly PipelineStatus[] = [
+  "failure",
+  "action_required",
+  "running",
+  "queued",
+  "success",
+];
+
 /**
  * Single source of truth mapping a domain {@link PipelineStatus} to how it is
  * rendered. Colours reference CSS variables so light/dark theming stays in

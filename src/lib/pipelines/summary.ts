@@ -28,19 +28,26 @@ function isErrored(repo: RepoPipelines): boolean {
   return repo.error !== null;
 }
 
-/** Compute headline counts for the dashboard summary bar. */
-export function summarizeOverview(overview: PipelineOverview): OverviewSummary {
+/** Compute headline counts for a set of repositories. */
+export function summarizeRepositories(
+  repositories: readonly RepoPipelines[],
+): OverviewSummary {
   const byStatus: Record<PipelineStatus, number> = { ...EMPTY_STATUS_COUNTS };
   let erroredRepos = 0;
 
-  for (const repo of overview.repositories) {
+  for (const repo of repositories) {
     if (isErrored(repo)) erroredRepos += 1;
     if (repo.overallStatus) byStatus[repo.overallStatus] += 1;
   }
 
   return {
-    totalRepos: overview.repositories.length,
+    totalRepos: repositories.length,
     erroredRepos,
     byStatus,
   };
+}
+
+/** Compute headline counts for the dashboard summary bar. */
+export function summarizeOverview(overview: PipelineOverview): OverviewSummary {
+  return summarizeRepositories(overview.repositories);
 }

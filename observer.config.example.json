@@ -1,0 +1,13 @@
+{
+  "includeUngrouped": true,
+  "groups": [
+    {
+      "name": "Microservices",
+      "repos": ["auth-service-back", "coins-service", "bitcoin-service"]
+    },
+    {
+      "name": "Frontends",
+      "repos": ["pool-site", "heatboard"]
+    }
+  ]
+}

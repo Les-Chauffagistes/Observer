@@ -1,34 +1,41 @@
-import type { PipelineOverview, PipelineStatus } from "@/lib/pipelines/types";
-import { summarizeOverview } from "@/lib/pipelines/summary";
+import type { PipelineGroup, PipelineOverview } from "@/lib/pipelines";
+import { summarizeRepositories } from "@/lib/pipelines";
 import { formatRelativeTime } from "@/lib/format/time";
-import { STATUS_PRESENTATION } from "@/components/statusPresentation";
-import { RepoPipelineCard } from "@/components/RepoPipelineCard";
+import { RepoGrid } from "@/components/RepoGrid";
+import { RepoGroupSection } from "@/components/RepoGroupSection";
+import { StatusSummary } from "@/components/StatusSummary";
 import styles from "./PipelineDashboard.module.css";
 
 interface PipelineDashboardProps {
   readonly overview: PipelineOverview;
+  readonly groups: readonly PipelineGroup[];
 }
 
-/** Status counts worth surfacing in the summary bar, in display order. */
-const SUMMARY_STATUSES: readonly PipelineStatus[] = [
-  "failure",
-  "action_required",
-  "running",
-  "queued",
-  "success",
-];
+/**
+ * A single implicit group (no `observer.config.json`) is rendered as a plain
+ * grid; anything else is rendered as collapsible folders.
+ */
+function isFlat(groups: readonly PipelineGroup[]): boolean {
+  return groups.length <= 1 && (groups[0]?.name ?? null) === null;
+}
 
-/** Top-level dashboard: summary bar plus a grid of repository cards. */
-export function PipelineDashboard({ overview }: PipelineDashboardProps) {
-  const summary = summarizeOverview(overview);
+/** Top-level dashboard: summary bar plus repository folders (or a flat grid). */
+export function PipelineDashboard({ overview, groups }: PipelineDashboardProps) {
+  // Summaries reflect only the repositories that are actually shown — hidden
+  // (ungrouped) repositories must not skew the header counts.
+  const visibleRepositories = groups.flatMap((group) => [
+    ...group.repositories,
+  ]);
+  const summary = summarizeRepositories(visibleRepositories);
 
-  // When every repository shares one owner, show it once here and drop the
-  // redundant prefix from each card.
+  // When every visible repository shares one owner, show it once here and drop
+  // the redundant prefix from each card.
   const owners = new Set(
-    overview.repositories.map((repo) => repo.repo.owner.toLowerCase()),
+    visibleRepositories.map((repo) => repo.repo.owner.toLowerCase()),
   );
   const commonOwner =
-    owners.size === 1 ? overview.repositories[0]?.repo.owner ?? null : null;
+    owners.size === 1 ? visibleRepositories[0]?.repo.owner ?? null : null;
+  const showOwner = commonOwner === null;
 
   return (
     <div className={styles.dashboard}>
@@ -44,35 +51,20 @@ export function PipelineDashboard({ overview }: PipelineDashboardProps) {
             {formatRelativeTime(overview.generatedAt)}
           </p>
         </div>
-        <ul className={styles.summary}>
-          {SUMMARY_STATUSES.map((status) => (
-            <li key={status} className={styles.summaryItem}>
-              <span
-                className={styles.summaryDot}
-                style={{
-                  backgroundColor: `var(${STATUS_PRESENTATION[status].colorVar})`,
-                }}
-              />
-              <span className={styles.summaryCount}>
-                {summary.byStatus[status]}
-              </span>
-              <span className={styles.summaryLabel}>
-                {STATUS_PRESENTATION[status].label}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <StatusSummary summary={summary} />
       </header>
 
-      {overview.repositories.length === 0 ? (
+      {visibleRepositories.length === 0 ? (
         <p className={styles.empty}>No repositories matched the configuration.</p>
+      ) : isFlat(groups) ? (
+        <RepoGrid repositories={visibleRepositories} showOwner={showOwner} />
       ) : (
-        <div className={styles.grid}>
-          {overview.repositories.map((repo) => (
-            <RepoPipelineCard
-              key={`${repo.repo.owner}/${repo.repo.name}`}
-              data={repo}
-              showOwner={commonOwner === null}
+        <div className={styles.folders}>
+          {groups.map((group) => (
+            <RepoGroupSection
+              key={group.name}
+              group={{ ...group, name: group.name as string }}
+              showOwner={showOwner}
             />
           ))}
         </div>

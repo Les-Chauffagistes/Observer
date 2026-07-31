@@ -1,6 +1,7 @@
 import type { AppConfig } from "@/lib/config";
 import { GitHubApiError } from "@/lib/github/errors";
 import type { GitHubClient } from "@/lib/github/client";
+import { repoRefKey } from "@/lib/github/repo";
 import type { RepoRef } from "@/lib/github/types";
 import {
   latestRunPerWorkflow,
@@ -8,37 +9,43 @@ import {
 } from "@/lib/pipelines/mappers";
 import type { PipelineOverview, RepoPipelines } from "@/lib/pipelines/types";
 
-/** Serialise a repo reference into a stable de-duplication key. */
-function repoKey(repo: RepoRef): string {
-  return `${repo.owner}/${repo.name}`.toLowerCase();
+/** Options controlling which repositories an overview covers. */
+export interface OverviewOptions {
+  /** Extra repositories to observe (e.g. those referenced by groups). */
+  readonly extraRepos?: readonly RepoRef[];
+  /** Whether to auto-discover the organisation's repositories. Default `true`. */
+  readonly discoverOrg?: boolean;
 }
 
 /**
  * Resolve the effective set of repositories to observe, combining the
- * explicitly configured list with organisation discovery. Archived and
- * disabled repositories are dropped, and duplicates are removed.
+ * explicitly configured list, any extra repositories, and (optionally)
+ * organisation discovery. Archived and disabled organisation repositories are
+ * dropped, and duplicates are removed.
  */
 export async function resolveRepositories(
   client: GitHubClient,
   config: AppConfig,
+  options: OverviewOptions = {},
 ): Promise<RepoRef[]> {
+  const { extraRepos = [], discoverOrg = true } = options;
   const byKey = new Map<string, RepoRef>();
 
-  for (const repo of config.repos) {
-    byKey.set(repoKey(repo), repo);
+  for (const repo of [...config.repos, ...extraRepos]) {
+    byKey.set(repoRefKey(repo), repo);
   }
 
-  if (config.org) {
+  if (discoverOrg && config.org) {
     const discovered = await client.listOrgRepos(config.org);
     for (const repo of discovered) {
       if (repo.archived || repo.disabled) continue;
       const ref: RepoRef = { owner: repo.owner.login, name: repo.name };
-      byKey.set(repoKey(ref), ref);
+      byKey.set(repoRefKey(ref), ref);
     }
   }
 
   return [...byKey.values()].sort((a, b) =>
-    repoKey(a).localeCompare(repoKey(b)),
+    repoRefKey(a).localeCompare(repoRefKey(b)),
   );
 }
 
@@ -77,8 +84,9 @@ function describeFetchError(error: unknown): string {
 export async function getPipelineOverview(
   client: GitHubClient,
   config: AppConfig,
+  options: OverviewOptions = {},
 ): Promise<PipelineOverview> {
-  const repos = await resolveRepositories(client, config);
+  const repos = await resolveRepositories(client, config, options);
   const repositories = await Promise.all(
     repos.map((repo) => fetchRepoPipelines(client, repo)),
   );
