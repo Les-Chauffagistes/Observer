@@ -5,8 +5,7 @@ import { formatRelativeTime } from "@/lib/format/time";
 import { RepoGrid } from "@/components/RepoGrid";
 import { RepoGroupSection } from "@/components/RepoGroupSection";
 import { PinnedRepoCard } from "@/components/PinnedRepoCard";
-import { StatusSummary } from "@/components/StatusSummary";
-import { ViewNav } from "@/components/ViewNav";
+import { DashboardHeader } from "@/components/DashboardHeader";
 import styles from "./PipelineDashboard.module.css";
 
 interface PipelineDashboardProps {
@@ -48,23 +47,18 @@ export function PipelineDashboard({
 
   return (
     <div className={styles.dashboard}>
-      <header className={styles.header}>
-        <div>
-          <h1 className={styles.title}>
-            CI/CD Observer
-            {commonOwner && <span className={styles.org}>{commonOwner}</span>}
-          </h1>
-          <p className={styles.subtitle}>
+      <DashboardHeader
+        activeView="repositories"
+        organization={commonOwner}
+        summary={summary}
+        subtitle={
+          <>
             {summary.totalRepos} repositor
             {summary.totalRepos === 1 ? "y" : "ies"} · updated{" "}
             {formatRelativeTime(overview.generatedAt)}
-          </p>
-        </div>
-        <div className={styles.headerAside}>
-          <ViewNav active="repositories" />
-          <StatusSummary summary={summary} />
-        </div>
-      </header>
+          </>
+        }
+      />
 
       {pinned && <PinnedRepoCard data={pinned} />}
 

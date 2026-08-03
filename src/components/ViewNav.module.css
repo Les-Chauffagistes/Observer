@@ -1,20 +1,18 @@
 .nav {
   display: inline-flex;
-  gap: 0.25rem;
-  padding: 0.25rem;
-  background: var(--surface-muted);
-  border: 1px solid var(--border);
-  border-radius: 999px;
+  align-items: center;
+  gap: 0.2rem;
+  border-bottom: 1px solid var(--border);
 }
 
 .link {
-  padding: 0.3rem 0.85rem;
-  border-radius: 999px;
-  font-size: 0.85rem;
+  padding: 0.45rem 0.7rem;
+  border-bottom: 2px solid transparent;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-muted);
   text-decoration: none;
-  transition: color 0.15s ease, background 0.15s ease;
+  transition: color 0.15s ease, border-color 0.15s ease;
 }
 
 .link:hover {
@@ -22,7 +20,17 @@
 }
 
 .link[aria-current="page"] {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  border-bottom-color: var(--foreground);
   color: var(--foreground);
+}
+
+@media (max-width: 640px) {
+  .nav {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .link {
+    flex: none;
+  }
 }

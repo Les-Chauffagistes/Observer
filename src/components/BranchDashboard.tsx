@@ -4,8 +4,7 @@ import { summarizeBranches } from "@/lib/pipelines";
 import { formatRelativeTime } from "@/lib/format/time";
 import { BranchGrid } from "@/components/BranchGrid";
 import { BranchGroupSection } from "@/components/BranchGroupSection";
-import { StatusSummary } from "@/components/StatusSummary";
-import { ViewNav } from "@/components/ViewNav";
+import { DashboardHeader } from "@/components/DashboardHeader";
 import styles from "./PipelineDashboard.module.css";
 
 interface BranchDashboardProps {
@@ -45,22 +44,17 @@ export function BranchDashboard({ overview, groups }: BranchDashboardProps) {
 
   return (
     <div className={styles.dashboard}>
-      <header className={styles.header}>
-        <div>
-          <h1 className={styles.title}>
-            CI/CD Observer
-            {commonOwner && <span className={styles.org}>{commonOwner}</span>}
-          </h1>
-          <p className={styles.subtitle}>
+      <DashboardHeader
+        activeView="branches"
+        organization={commonOwner}
+        summary={summary}
+        subtitle={
+          <>
             {branchCount} unmerged branch{branchCount === 1 ? "" : "es"} ·
             updated {formatRelativeTime(overview.generatedAt)}
-          </p>
-        </div>
-        <div className={styles.headerAside}>
-          <ViewNav active="branches" />
-          <StatusSummary summary={summary} />
-        </div>
-      </header>
+          </>
+        }
+      />
 
       {visibleRepositories.length === 0 ? (
         <p className={styles.empty}>

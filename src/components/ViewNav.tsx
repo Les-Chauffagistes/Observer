@@ -1,7 +1,7 @@
 import Link from "next/link";
 import styles from "./ViewNav.module.css";
 
-type View = "repositories" | "pipelines" | "branches";
+export type View = "repositories" | "pipelines" | "branches";
 
 interface ViewNavProps {
   readonly active: View;

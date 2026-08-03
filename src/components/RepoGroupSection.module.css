@@ -1,8 +1,13 @@
 .folder {
   border: 1px solid var(--border);
-  border-radius: 24px;
+  border-radius: 8px;
   background: var(--surface);
   overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.folder[open] {
+  border-color: var(--border-strong);
 }
 
 .summary {
@@ -11,7 +16,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem 1.5rem;
-  padding: 0.9rem 1.1rem;
+  padding: 0.9rem 1rem;
   cursor: pointer;
   list-style: none;
   user-select: none;
@@ -41,21 +46,25 @@
 }
 
 .count {
-  padding: 0.05rem 0.5rem;
-  background: var(--surface-muted);
-  border: 1px solid var(--border);
-  border-radius: 999px;
+  color: var(--text-muted);
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--text-muted);
 }
 
 .body {
-  padding: 0 1.1rem 1.1rem;
+  padding: 0 1rem 1rem;
 }
 
 .empty {
   padding: 0 1.1rem 1.1rem;
   color: var(--text-muted);
   font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+  .summary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
 }

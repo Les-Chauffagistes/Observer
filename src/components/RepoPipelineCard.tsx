@@ -22,7 +22,7 @@ export function RepoPipelineCard({
   const repoUrl = `https://github.com/${fullName}`;
 
   return (
-    <article className={styles.card}>
+    <article className={styles.card} data-status={overallStatus ?? undefined}>
       <header className={styles.header}>
         <a
           className={styles.title}

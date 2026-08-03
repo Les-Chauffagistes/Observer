@@ -25,9 +25,6 @@ export function PinnedRepoCard({ data }: PinnedRepoCardProps) {
   return (
     <article className={styles.card}>
       <header className={styles.header}>
-        <span className={styles.pin} aria-hidden>
-          ★
-        </span>
         <a
           className={styles.title}
           href={repoUrl}
@@ -38,7 +35,7 @@ export function PinnedRepoCard({ data }: PinnedRepoCardProps) {
           <span className={styles.owner}>{repo.owner}/</span>
           <span className={styles.name}>{repo.name}</span>
         </a>
-        <span className={styles.pinnedTag}>Pinned</span>
+        <span className={styles.deploymentLabel}>Deployment overview</span>
       </header>
 
       {error ? (

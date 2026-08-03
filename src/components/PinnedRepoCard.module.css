@@ -1,24 +1,19 @@
 .card {
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
-  padding: 1.25rem 1.4rem;
+  gap: 1rem;
+  padding: 1.2rem;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  border-top: 3px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: var(--shadow-card);
 }
 
 .header {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-}
-
-.pin {
-  color: var(--status-action_required);
-  font-size: 1.05rem;
-  line-height: 1;
 }
 
 .title {
@@ -38,33 +33,28 @@
   font-weight: 400;
 }
 
-.pinnedTag {
+.deploymentLabel {
   margin-left: auto;
-  padding: 0.15rem 0.55rem;
-  background: var(--surface-muted);
-  border: 1px solid var(--border);
-  border-radius: 999px;
   font-size: 0.7rem;
   font-weight: 600;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .environments {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .environment {
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
-  padding: 0.9rem 1rem;
-  background: var(--surface-muted);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
 }
 
 .envHeader {
@@ -87,10 +77,6 @@
 }
 
 .envBranch {
-  padding: 0.05rem 0.4rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 5px;
   font-family: var(--font-geist-mono), monospace;
   font-size: 0.7rem;
   color: var(--text-muted);
@@ -136,8 +122,8 @@
   flex-direction: column;
   gap: 0.3rem;
   list-style: none;
-  margin-left: 0.9rem;
-  padding-left: 0.7rem;
+  margin-left: 3px;
+  padding-left: 0.65rem;
   border-left: 1px solid var(--border);
 }
 
@@ -180,4 +166,20 @@ a.jobName:hover {
 .empty {
   color: var(--text-muted);
   font-size: 0.8rem;
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: 1rem;
+  }
+
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .deploymentLabel {
+    margin-left: 0;
+  }
 }

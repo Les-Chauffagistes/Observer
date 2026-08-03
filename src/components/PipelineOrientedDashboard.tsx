@@ -2,8 +2,7 @@ import type { Pipeline, PipelineOverview } from "@/lib/pipelines";
 import { summarizePipelines } from "@/lib/pipelines";
 import { formatRelativeTime } from "@/lib/format/time";
 import { PipelineSection } from "@/components/PipelineSection";
-import { StatusSummary } from "@/components/StatusSummary";
-import { ViewNav } from "@/components/ViewNav";
+import { DashboardHeader } from "@/components/DashboardHeader";
 import styles from "./PipelineDashboard.module.css";
 
 interface PipelineOrientedDashboardProps {
@@ -35,22 +34,17 @@ export function PipelineOrientedDashboard({
 
   return (
     <div className={styles.dashboard}>
-      <header className={styles.header}>
-        <div>
-          <h1 className={styles.title}>
-            CI/CD Observer
-            {commonOwner && <span className={styles.org}>{commonOwner}</span>}
-          </h1>
-          <p className={styles.subtitle}>
+      <DashboardHeader
+        activeView="pipelines"
+        organization={commonOwner}
+        summary={summary}
+        subtitle={
+          <>
             {pipelines.length} pipeline{pipelines.length === 1 ? "" : "s"} ·
             updated {formatRelativeTime(overview.generatedAt)}
-          </p>
-        </div>
-        <div className={styles.headerAside}>
-          <ViewNav active="pipelines" />
-          <StatusSummary summary={summary} />
-        </div>
-      </header>
+          </>
+        }
+      />
 
       {pipelines.length === 0 ? (
         <p className={styles.empty}>
