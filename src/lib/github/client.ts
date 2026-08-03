@@ -3,6 +3,8 @@ import type {
   GitHubBranch,
   GitHubComparison,
   GitHubRepo,
+  GitHubWorkflowJob,
+  GitHubWorkflowJobsResponse,
   GitHubWorkflowRun,
   GitHubWorkflowRunsResponse,
   RepoRef,
@@ -74,6 +76,22 @@ export class GitHubClient {
       { searchParams: { per_page: perPage } },
     );
     return [...response.workflow_runs];
+  }
+
+  /**
+   * List the jobs of a workflow run. Each job has its own status/conclusion, so
+   * this reveals detail the run's single top-level status hides — e.g. a
+   * `success` run whose deployment job was `skipped`.
+   */
+  async listWorkflowJobs(
+    repo: RepoRef,
+    runId: number,
+  ): Promise<GitHubWorkflowJob[]> {
+    const response = await this.get<GitHubWorkflowJobsResponse>(
+      `/repos/${repo.owner}/${repo.name}/actions/runs/${runId}/jobs`,
+      { searchParams: { per_page: 100, filter: "latest" } },
+    );
+    return [...response.jobs];
   }
 
   /**

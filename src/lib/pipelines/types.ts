@@ -31,6 +31,22 @@ export interface PipelineRun {
   readonly actor: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
+  /**
+   * Individual jobs of the run, newest-first-agnostic (kept in GitHub order),
+   * or `null` when jobs were not fetched for this run. Jobs reveal detail the
+   * run's single `status` hides — e.g. a `success` run whose deployment job was
+   * `skipped`.
+   */
+  readonly jobs: readonly PipelineJob[] | null;
+}
+
+/** A single job within a workflow run, projected into the domain model. */
+export interface PipelineJob {
+  readonly id: number;
+  readonly name: string;
+  readonly status: PipelineStatus;
+  /** Link to the job's logs, when available. */
+  readonly url: string | null;
 }
 
 /** Aggregated pipeline state for a single repository. */

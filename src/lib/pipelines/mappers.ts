@@ -1,9 +1,14 @@
 import type {
   GitHubRunConclusion,
   GitHubRunStatus,
+  GitHubWorkflowJob,
   GitHubWorkflowRun,
 } from "@/lib/github/types";
-import type { PipelineRun, PipelineStatus } from "@/lib/pipelines/types";
+import type {
+  PipelineJob,
+  PipelineRun,
+  PipelineStatus,
+} from "@/lib/pipelines/types";
 
 /**
  * Map a terminal outcome (`conclusion`, or a terminal value GitHub occasionally
@@ -64,7 +69,26 @@ export function toPipelineRun(run: GitHubWorkflowRun): PipelineRun {
     actor: run.actor?.login ?? null,
     createdAt: run.created_at,
     updatedAt: run.updated_at,
+    jobs: null,
   };
+}
+
+/** Project a raw GitHub workflow job into the domain model. */
+export function toPipelineJob(job: GitHubWorkflowJob): PipelineJob {
+  return {
+    id: job.id,
+    name: job.name,
+    status: toPipelineStatus(job.status, job.conclusion),
+    url: job.html_url,
+  };
+}
+
+/** Attach fetched jobs to a run, returning a new run (runs are immutable). */
+export function withJobs(
+  run: PipelineRun,
+  jobs: readonly GitHubWorkflowJob[],
+): PipelineRun {
+  return { ...run, jobs: jobs.map(toPipelineJob) };
 }
 
 /**

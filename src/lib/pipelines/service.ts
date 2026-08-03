@@ -12,11 +12,14 @@ import {
   latestRunPerWorkflow,
   overallStatus,
   toPipelineRun,
+  withJobs,
 } from "@/lib/pipelines/mappers";
 import type {
   BranchOverview,
+  BranchPipelines,
   PinnedRepoPipelines,
   PipelineOverview,
+  PipelineRun,
   RepoBranchPipelines,
   RepoPipelines,
 } from "@/lib/pipelines/types";
@@ -215,6 +218,10 @@ const PINNED_RUN_LIMIT = 100;
  * Fetch the pinned repository's per-environment pipeline state, isolating
  * failures. Each configured environment is matched to its branch's latest run
  * per workflow; environments whose branch has no runs get `pipelines: null`.
+ *
+ * For the pinned repo (and only there) we additionally fetch each surfaced
+ * run's **jobs**, so a run marked `success` whose deployment job was `skipped`
+ * is visible — the whole reason this repo is pinned.
  */
 export async function getPinnedRepo(
   client: GitHubClient,
@@ -230,15 +237,20 @@ export async function getPinnedRepo(
       ]),
     );
 
-    return {
-      repo,
-      environments: environments.map((env) => ({
-        label: env.label,
-        branch: env.branch,
-        pipelines: byBranch.get(env.branch) ?? null,
-      })),
-      error: null,
-    };
+    const branches = await Promise.all(
+      environments.map(async (env) => {
+        const pipelines = byBranch.get(env.branch) ?? null;
+        return {
+          label: env.label,
+          branch: env.branch,
+          pipelines: pipelines
+            ? await withRunJobs(client, repo, pipelines)
+            : null,
+        };
+      }),
+    );
+
+    return { repo, environments: branches, error: null };
   } catch (error) {
     return {
       repo,
@@ -250,4 +262,26 @@ export async function getPinnedRepo(
       error: describeFetchError(error),
     };
   }
+}
+
+/**
+ * Enrich a branch's runs with their jobs, fetched in parallel. A failure to
+ * load one run's jobs is swallowed (the run simply keeps `jobs: null`) so the
+ * pinned card never breaks over missing job detail.
+ */
+async function withRunJobs(
+  client: GitHubClient,
+  repo: RepoRef,
+  pipelines: BranchPipelines,
+): Promise<BranchPipelines> {
+  const runs = await Promise.all(
+    pipelines.runs.map(async (run): Promise<PipelineRun> => {
+      try {
+        return withJobs(run, await client.listWorkflowJobs(repo, run.id));
+      } catch {
+        return run;
+      }
+    }),
+  );
+  return { ...pipelines, runs };
 }

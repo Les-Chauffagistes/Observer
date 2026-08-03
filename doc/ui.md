@@ -77,7 +77,7 @@ The dashboard offers three views of the same fetched data, switched via
 | [`RepoGrid`](../src/components/RepoGrid.tsx)                                  | `repositories`, `showOwner`        | Responsive grid of cards. Shared by flat & folder layouts.                     |
 | [`BranchGrid`](../src/components/BranchGrid.tsx)                              | `repositories`, `showOwner`        | Responsive grid of `RepoBranchCard`s. Shared by flat & folder layouts.         |
 | [`RepoPipelineCard`](../src/components/RepoPipelineCard.tsx)                  | `data`, `showOwner?`               | One repo: title, overall badge, run list. `CardBody`/`RunRow` are internal.    |
-| [`PinnedRepoCard`](../src/components/PinnedRepoCard.tsx)                      | `data`                             | Pinned repo above the folders; one column per environment (branch) with badge + runs. |
+| [`PinnedRepoCard`](../src/components/PinnedRepoCard.tsx)                      | `data`                             | Pinned repo above the folders; one column per environment (branch) with badge, runs, and each run's jobs. |
 | [`RepoBranchCard`](../src/components/RepoBranchCard.tsx)                      | `data`, `showOwner?`               | One repo's unmerged branches, each with a status badge + its runs.             |
 | [`StatusBadge`](../src/components/StatusBadge.tsx)                            | `status`, `compact?`               | Coloured badge (or dot) for a `PipelineStatus`.                                 |
 | [`StatusSummary`](../src/components/StatusSummary.tsx)                        | `summary`, `hideZeros?`            | Inline list of status dots + counts. Shared by header and folders.             |

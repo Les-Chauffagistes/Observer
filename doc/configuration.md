@@ -90,8 +90,9 @@ pipeline state highlighted side by side. Parsed into `PinnedRepoConfig` by
 - `"pinned": "gitops"` (a bare string) is shorthand for that repo with the
   default environments.
 - Each environment shows the **latest run per workflow** on its branch (reusing
-  `groupRunsByBranch`), fetched via `getPinnedRepo` in
-  [`service.ts`](../src/lib/pipelines/service.ts).
+  `groupRunsByBranch`), plus each run's **jobs**, fetched via `getPinnedRepo` in
+  [`service.ts`](../src/lib/pipelines/service.ts). Jobs are shown because a run
+  marked `success` can hide a `skipped` deployment job.
 - The pinned repo is excluded from the folders in
   [`loadOverview`](../src/lib/pipelines/index.ts) (matched by `repoRefKey`) so it
   never appears twice; header summary counts cover the folders only.

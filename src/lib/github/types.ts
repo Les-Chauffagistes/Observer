@@ -76,6 +76,28 @@ export interface GitHubWorkflowRunsResponse {
   readonly workflow_runs: readonly GitHubWorkflowRun[];
 }
 
+/**
+ * `jobs[]` item from `GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs`
+ * (partial). A job carries its own `status`/`conclusion`, so a run marked
+ * `success` overall can still contain a `skipped` deployment job — surfacing
+ * jobs is the only way to see that.
+ */
+export interface GitHubWorkflowJob {
+  readonly id: number;
+  readonly name: string;
+  readonly status: GitHubRunStatus;
+  readonly conclusion: GitHubRunConclusion | null;
+  readonly html_url: string | null;
+  readonly started_at: string | null;
+  readonly completed_at: string | null;
+}
+
+/** Envelope of `GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs`. */
+export interface GitHubWorkflowJobsResponse {
+  readonly total_count: number;
+  readonly jobs: readonly GitHubWorkflowJob[];
+}
+
 /** `branches[]` item from `GET /repos/{owner}/{repo}/branches` (partial). */
 export interface GitHubBranch {
   readonly name: string;

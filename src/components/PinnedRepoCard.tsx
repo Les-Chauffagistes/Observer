@@ -5,6 +5,7 @@ import type {
 import { repoFullName } from "@/lib/github/repo";
 import { formatRelativeTime } from "@/lib/format/time";
 import { StatusBadge } from "@/components/StatusBadge";
+import { STATUS_PRESENTATION } from "@/components/statusPresentation";
 import styles from "./PinnedRepoCard.module.css";
 
 interface PinnedRepoCardProps {
@@ -80,19 +81,48 @@ function EnvironmentColumn({
         <ul className={styles.runs}>
           {pipelines.runs.map((run) => (
             <li key={run.id} className={styles.run}>
-              <StatusBadge status={run.status} compact />
-              <a
-                className={styles.runName}
-                href={run.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={run.title}
-              >
-                {run.workflowName}
-              </a>
-              <span className={styles.meta}>
-                {formatRelativeTime(run.updatedAt)}
-              </span>
+              <div className={styles.runLine}>
+                <StatusBadge status={run.status} compact />
+                <a
+                  className={styles.runName}
+                  href={run.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={run.title}
+                >
+                  {run.workflowName}
+                </a>
+                <span className={styles.meta}>
+                  {formatRelativeTime(run.updatedAt)}
+                </span>
+              </div>
+              {run.jobs && run.jobs.length > 0 && (
+                <ul className={styles.jobs}>
+                  {run.jobs.map((job) => (
+                    <li key={job.id} className={styles.job}>
+                      <StatusBadge status={job.status} compact />
+                      {job.url ? (
+                        <a
+                          className={styles.jobName}
+                          href={job.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={job.name}
+                        >
+                          {job.name}
+                        </a>
+                      ) : (
+                        <span className={styles.jobName} title={job.name}>
+                          {job.name}
+                        </span>
+                      )}
+                      <span className={styles.jobStatus}>
+                        {STATUS_PRESENTATION[job.status].label}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))}
         </ul>

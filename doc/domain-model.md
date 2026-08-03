@@ -35,7 +35,17 @@ A single value that collapses GitHub's separate `status` + `conclusion` fields:
 
 One workflow run projected into the domain. Fields: `id`, `workflowId`,
 `workflowName`, `title`, `runNumber`, `status` (`PipelineStatus`), `branch`,
-`commitSha`, `event`, `url`, `actor`, `createdAt`, `updatedAt`.
+`commitSha`, `event`, `url`, `actor`, `createdAt`, `updatedAt`, and `jobs`
+(`PipelineJob[] | null`).
+
+### `PipelineJob`
+
+One job within a run: `{ id; name; status: PipelineStatus; url: string | null }`.
+Jobs are only fetched for the **pinned** repository (via `withRunJobs` in
+[`service.ts`](../src/lib/pipelines/service.ts)); everywhere else `run.jobs` is
+`null`. They matter because a run's single top-level `status` can be `success`
+while its deployment job is `skipped` — jobs make that visible. Mapped by
+`toPipelineJob`; attached to a run by `withJobs(run, jobs)`.
 
 ### `RepoPipelines`
 
@@ -164,7 +174,9 @@ So a repo with any failing workflow surfaces as `failure`; a fully green repo is
 | Function                        | Purpose                                                        |
 | ------------------------------- | ------------------------------------------------------------- |
 | `toPipelineStatus(s, c)`        | Normalise status/conclusion (table above).                    |
-| `toPipelineRun(run)`            | Map one raw `GitHubWorkflowRun` → `PipelineRun`.             |
+| `toPipelineRun(run)`            | Map one raw `GitHubWorkflowRun` → `PipelineRun` (`jobs: null`). |
+| `toPipelineJob(job)`            | Map one raw `GitHubWorkflowJob` → `PipelineJob`.              |
+| `withJobs(run, jobs)`           | Return a copy of `run` with its `jobs` populated.             |
 | `latestRunPerWorkflow(runs)`    | Keep newest run per `workflow_id`, sorted newest-first.       |
 | `overallStatus(runs)`           | Most actionable status across a repo's runs (or `null`).      |
 
