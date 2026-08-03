@@ -1,8 +1,10 @@
 import type { PipelineGroup, PipelineOverview } from "@/lib/pipelines";
 import { summarizeRepositories } from "@/lib/pipelines";
+import type { PinnedRepoPipelines } from "@/lib/pipelines/types";
 import { formatRelativeTime } from "@/lib/format/time";
 import { RepoGrid } from "@/components/RepoGrid";
 import { RepoGroupSection } from "@/components/RepoGroupSection";
+import { PinnedRepoCard } from "@/components/PinnedRepoCard";
 import { StatusSummary } from "@/components/StatusSummary";
 import { ViewNav } from "@/components/ViewNav";
 import styles from "./PipelineDashboard.module.css";
@@ -10,6 +12,8 @@ import styles from "./PipelineDashboard.module.css";
 interface PipelineDashboardProps {
   readonly overview: PipelineOverview;
   readonly groups: readonly PipelineGroup[];
+  /** The pinned repository shown above the folders, if configured. */
+  readonly pinned?: PinnedRepoPipelines | null;
 }
 
 /**
@@ -21,7 +25,11 @@ function isFlat(groups: readonly PipelineGroup[]): boolean {
 }
 
 /** Top-level dashboard: summary bar plus repository folders (or a flat grid). */
-export function PipelineDashboard({ overview, groups }: PipelineDashboardProps) {
+export function PipelineDashboard({
+  overview,
+  groups,
+  pinned = null,
+}: PipelineDashboardProps) {
   // Summaries reflect only the repositories that are actually shown — hidden
   // (ungrouped) repositories must not skew the header counts.
   const visibleRepositories = groups.flatMap((group) => [
@@ -57,6 +65,8 @@ export function PipelineDashboard({ overview, groups }: PipelineDashboardProps) 
           <StatusSummary summary={summary} />
         </div>
       </header>
+
+      {pinned && <PinnedRepoCard data={pinned} />}
 
       {visibleRepositories.length === 0 ? (
         <p className={styles.empty}>No repositories matched the configuration.</p>

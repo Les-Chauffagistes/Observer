@@ -15,10 +15,12 @@ import {
 } from "@/lib/pipelines/mappers";
 import type {
   BranchOverview,
+  PinnedRepoPipelines,
   PipelineOverview,
   RepoBranchPipelines,
   RepoPipelines,
 } from "@/lib/pipelines/types";
+import type { EnvironmentConfig } from "@/lib/config/groups";
 
 /** Options controlling which repositories an overview covers. */
 export interface OverviewOptions {
@@ -200,4 +202,52 @@ export async function getBranchOverview(
   );
 
   return { repositories, generatedAt: new Date().toISOString() };
+}
+
+/**
+ * How many recent runs to inspect for the pinned repository. Must be generous
+ * enough to reach the latest run on every tracked environment branch (e.g.
+ * `main`) past a busier one (e.g. `develop`).
+ */
+const PINNED_RUN_LIMIT = 100;
+
+/**
+ * Fetch the pinned repository's per-environment pipeline state, isolating
+ * failures. Each configured environment is matched to its branch's latest run
+ * per workflow; environments whose branch has no runs get `pipelines: null`.
+ */
+export async function getPinnedRepo(
+  client: GitHubClient,
+  repo: RepoRef,
+  environments: readonly EnvironmentConfig[],
+): Promise<PinnedRepoPipelines> {
+  try {
+    const rawRuns = await client.listWorkflowRuns(repo, PINNED_RUN_LIMIT);
+    const byBranch = new Map(
+      groupRunsByBranch(rawRuns.map(toPipelineRun)).map((branch) => [
+        branch.branch,
+        branch,
+      ]),
+    );
+
+    return {
+      repo,
+      environments: environments.map((env) => ({
+        label: env.label,
+        branch: env.branch,
+        pipelines: byBranch.get(env.branch) ?? null,
+      })),
+      error: null,
+    };
+  } catch (error) {
+    return {
+      repo,
+      environments: environments.map((env) => ({
+        label: env.label,
+        branch: env.branch,
+        pipelines: null,
+      })),
+      error: describeFetchError(error),
+    };
+  }
 }

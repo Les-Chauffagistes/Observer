@@ -53,6 +53,13 @@ is git-ignored (see [`.gitignore`](../.gitignore)).
 ```json
 {
   "includeUngrouped": true,
+  "pinned": {
+    "repo": "gitops",
+    "environments": [
+      { "label": "Staging", "branch": "develop" },
+      { "label": "Production", "branch": "main" }
+    ]
+  },
   "groups": [
     { "name": "Microservices", "repos": ["auth-service", "coins-service"] },
     { "name": "Frontends", "repos": ["pool-site"] }
@@ -66,6 +73,30 @@ Parsed into `GroupsConfig` by `loadGroupsConfig(defaultOwner)`:
 | ------------------ | --------------------------------- | ------- | ------------------------------------------------------------------ |
 | `groups`           | `{ name, repos: string[] }[]`     | —       | Ordered folders. `name` non-empty; `repos` entries as above.      |
 | `includeUngrouped` | `boolean`                         | `true`  | Show org repos not in any group (in an `Other` folder) or hide them. |
+| `pinned`           | `string` \| `{ repo, environments? }` | `null`  | A single repository pinned above the folders (see below).         |
+
+### Pinned repository — `pinned`
+
+A single repository that does not fit any folder (typically a GitOps/deployment
+repo) can be pinned at the top of the dashboard with its per-environment
+pipeline state highlighted side by side. Parsed into `PinnedRepoConfig` by
+`parsePinned` in [`groups.ts`](../src/lib/config/groups.ts):
+
+| Field          | Type                        | Default                         | Meaning                                                        |
+| -------------- | --------------------------- | ------------------------------- | -------------------------------------------------------------- |
+| `repo`         | `string`                    | —                               | Bare `repo` or `owner/repo`; always observed, even outside org. |
+| `environments` | `{ label, branch }[]`       | `develop`→Staging, `main`→Prod  | Each pairs a display `label` with the branch that reflects it.  |
+
+- `"pinned": "gitops"` (a bare string) is shorthand for that repo with the
+  default environments.
+- Each environment shows the **latest run per workflow** on its branch (reusing
+  `groupRunsByBranch`), fetched via `getPinnedRepo` in
+  [`service.ts`](../src/lib/pipelines/service.ts).
+- The pinned repo is excluded from the folders in
+  [`loadOverview`](../src/lib/pipelines/index.ts) (matched by `repoRefKey`) so it
+  never appears twice; header summary counts cover the folders only.
+- A fetch failure is isolated on the card itself (`PinnedRepoPipelines.error`)
+  and never breaks the rest of the dashboard.
 
 Behavioural rules (implemented in
 [`pipelines/grouping.ts`](../src/lib/pipelines/grouping.ts) and
@@ -95,4 +126,6 @@ bare name). `loadOverview` catches `ConfigError` and surfaces it through
 The observed repository set is the **union** of: `GITHUB_REPOS` + all group
 repos + (org discovery, unless skipped). Duplicates are removed by
 `repoRefKey` (case-insensitive `owner/name`). See `resolveRepositories` in
-[`service.ts`](../src/lib/pipelines/service.ts).
+[`service.ts`](../src/lib/pipelines/service.ts). The `pinned` repo is fetched
+separately by `getPinnedRepo` (also always observed) and then excluded from the
+folders so it appears only in its top card.

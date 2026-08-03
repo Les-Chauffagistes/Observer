@@ -17,6 +17,9 @@ of microservice repositories, giving the single overview the GitHub UI does not.
   result is never masked by a later run on the default branch.
 - Organise repositories into collapsible **folders** and hide irrelevant ones
   (`observer.config.json`).
+- **Pin** one key repository (e.g. a GitOps repo) at the very top, highlighting
+  the latest pipeline result of each environment side by side — `develop`
+  (staging) and `main` (production).
 - Latest run per workflow, per repository, with a normalised status badge.
 - Per-repository fault isolation: one failing repo never breaks the dashboard.
 - Brief fetch-layer caching to stay within GitHub API rate limits.
@@ -96,6 +99,35 @@ create an optional `observer.config.json` at the project root
   to `false`.
 
 The file is optional; without it the dashboard shows a single flat grid.
+
+### Pinned repository
+
+One repository that does not fit any folder — typically a GitOps/deployment
+repo — can be **pinned** at the very top of the dashboard with a dedicated card
+that highlights the latest pipeline result of each environment side by side:
+
+```json
+{
+  "pinned": {
+    "repo": "gitops",
+    "environments": [
+      { "label": "Staging", "branch": "develop" },
+      { "label": "Production", "branch": "main" }
+    ]
+  },
+  "groups": [ ... ]
+}
+```
+
+- `repo` may be bare (owner defaults to `GITHUB_ORG`) or `owner/repo`, and is
+  always observed even outside the org.
+- Each entry in `environments` pairs a `label` with the `branch` whose latest
+  run per workflow reflects that environment. `environments` is optional and
+  defaults to `develop` → **Staging** and `main` → **Production**.
+- `"pinned": "gitops"` (a bare string) is shorthand for the repo with those
+  default environments.
+- The pinned repository is shown only in its top card; it is removed from the
+  folders below so it never appears twice.
 
 ## Architecture
 

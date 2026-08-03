@@ -1,5 +1,12 @@
 {
   "includeUngrouped": true,
+  "pinned": {
+    "repo": "deploy",
+    "environments": [
+      { "label": "Staging", "branch": "develop" },
+      { "label": "Production", "branch": "main" }
+    ]
+  },
   "groups": [
     {
       "name": "Microservices",

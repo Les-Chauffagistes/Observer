@@ -99,6 +99,25 @@ branch is dropped when it is fully merged (`ahead_by === 0`) into any existing
 integration branch (`INTEGRATION_BRANCHES = develop | main | master`). Helpers:
 `isIntegrationBranch`, `sortBranches`, `countBranches`, `withUnmergedBranches`.
 
+### `EnvironmentPipelines` / `PinnedRepoPipelines` — pinned repository
+
+The projection behind the **pinned** repository card (see
+[configuration.md](./configuration.md#pinned-repository--pinned)). It reuses
+`groupRunsByBranch` to surface, per configured environment, the latest run per
+workflow on that environment's branch.
+
+- `EnvironmentPipelines` = `{ label: string; branch: string; pipelines: BranchPipelines | null }`
+  — one environment (e.g. `Production` → `main`); `pipelines` is `null` when the
+  branch has no runs.
+- `PinnedRepoPipelines` = `{ repo: RepoRef; environments: EnvironmentPipelines[]; error: string | null }`
+  — same per-repo fault isolation as `RepoPipelines`.
+
+Built by `getPinnedRepo(client, repo, environments)` in
+[`service.ts`](../src/lib/pipelines/service.ts), driven by the `pinned` entry of
+`observer.config.json`. The composition root
+([`loadOverview`](../src/lib/pipelines/index.ts)) fetches it alongside the main
+overview and removes the pinned repo from the folders so it is shown only once.
+
 ### `OverviewSummary` — [`summary.ts`](../src/lib/pipelines/summary.ts)
 
 `{ totalRepos; erroredRepos; byStatus: Record<PipelineStatus, number> }`.

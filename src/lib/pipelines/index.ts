@@ -1,14 +1,17 @@
 import { ConfigError, loadConfig } from "@/lib/config";
 import { groupRepoRefs, loadGroupsConfig } from "@/lib/config/groups";
 import { GitHubClient } from "@/lib/github/client";
+import { repoRefKey } from "@/lib/github/repo";
 import { groupRepositories } from "@/lib/pipelines/grouping";
 import type { PipelineGroup } from "@/lib/pipelines/grouping";
 import {
   getBranchOverview,
+  getPinnedRepo,
   getPipelineOverview,
 } from "@/lib/pipelines/service";
 import type {
   BranchOverview,
+  PinnedRepoPipelines,
   PipelineOverview,
   RepoBranchPipelines,
 } from "@/lib/pipelines/types";
@@ -16,6 +19,7 @@ import type {
 export type * from "@/lib/pipelines/types";
 export {
   getBranchOverview,
+  getPinnedRepo,
   getPipelineOverview,
   resolveRepositories,
 } from "@/lib/pipelines/service";
@@ -46,6 +50,8 @@ export type OverviewResult =
       readonly ok: true;
       readonly overview: PipelineOverview;
       readonly groups: readonly PipelineGroup[];
+      /** The pinned repository shown above the folders, if configured. */
+      readonly pinned: PinnedRepoPipelines | null;
     }
   | { readonly ok: false; readonly reason: "config"; readonly message: string };
 
@@ -125,13 +131,29 @@ export async function loadOverview(): Promise<OverviewResult> {
     const { client, config, groupsConfig, groupRepos, discoverOrg } =
       resolved.context;
 
-    const overview = await getPipelineOverview(client, config, {
-      extraRepos: groupRepos,
-      discoverOrg,
-    });
-    const groups = groupRepositories(overview.repositories, groupsConfig);
+    const pinnedConfig = groupsConfig?.pinned ?? null;
 
-    return { ok: true, overview, groups };
+    const [overview, pinned] = await Promise.all([
+      getPipelineOverview(client, config, {
+        extraRepos: groupRepos,
+        discoverOrg,
+      }),
+      pinnedConfig
+        ? getPinnedRepo(client, pinnedConfig.repo, pinnedConfig.environments)
+        : Promise.resolve(null),
+    ]);
+
+    // The pinned repository has its own card above the folders; keep it out of
+    // the normal grouping so it never appears twice.
+    const pinnedKey = pinnedConfig ? repoRefKey(pinnedConfig.repo) : null;
+    const groupedRepositories = pinnedKey
+      ? overview.repositories.filter(
+          (repo) => repoRefKey(repo.repo) !== pinnedKey,
+        )
+      : overview.repositories;
+    const groups = groupRepositories(groupedRepositories, groupsConfig);
+
+    return { ok: true, overview, groups, pinned };
   } catch (error) {
     if (error instanceof ConfigError) {
       return { ok: false, reason: "config", message: error.message };

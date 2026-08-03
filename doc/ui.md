@@ -15,9 +15,10 @@ are [`src/app/page.tsx`](../src/app/page.tsx) (by repository),
 ```
 app/page.tsx  (force-dynamic, async server component → loadOverview())
  ├─ SetupNotice                         when result.ok === false
- └─ PipelineDashboard  { overview, groups }
+ └─ PipelineDashboard  { overview, groups, pinned? }
      ├─ ViewNav  { active }             repository ⇄ pipeline ⇄ branch toggle
      ├─ StatusSummary  { summary }      header status counts (visible repos)
+     ├─ PinnedRepoCard  { data }        pinned repo above folders (if configured)
      ├─ RepoGrid  { repositories }      flat view (no observer.config.json)
      └─ RepoGroupSection*  { group }    folder view (one per group)
          └─ RepoGrid → RepoPipelineCard*  { data, showOwner }
@@ -66,7 +67,7 @@ The dashboard offers three views of the same fetched data, switched via
 
 | Component                                                                    | Props                              | Responsibility                                                                 |
 | ---------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------ |
-| [`PipelineDashboard`](../src/components/PipelineDashboard.tsx)                | `overview`, `groups`               | Repository view shell: header, computes **visible** repos, chooses flat vs folder layout. |
+| [`PipelineDashboard`](../src/components/PipelineDashboard.tsx)                | `overview`, `groups`, `pinned?`    | Repository view shell: header, optional pinned card, computes **visible** repos, chooses flat vs folder layout. |
 | [`PipelineOrientedDashboard`](../src/components/PipelineOrientedDashboard.tsx) | `overview`, `pipelines`           | Pipeline view shell: header + one `PipelineSection` per pipeline.              |
 | [`BranchDashboard`](../src/components/BranchDashboard.tsx)                    | `overview`, `groups`               | Branch view shell: header, flat vs folder layout of `RepoBranchCard`s.        |
 | [`PipelineSection`](../src/components/PipelineSection.tsx)                    | `pipeline`, `showOwner`, `defaultOpen` | One collapsible pipeline folder (native `<details>`) listing its repos + status. |
@@ -76,6 +77,7 @@ The dashboard offers three views of the same fetched data, switched via
 | [`RepoGrid`](../src/components/RepoGrid.tsx)                                  | `repositories`, `showOwner`        | Responsive grid of cards. Shared by flat & folder layouts.                     |
 | [`BranchGrid`](../src/components/BranchGrid.tsx)                              | `repositories`, `showOwner`        | Responsive grid of `RepoBranchCard`s. Shared by flat & folder layouts.         |
 | [`RepoPipelineCard`](../src/components/RepoPipelineCard.tsx)                  | `data`, `showOwner?`               | One repo: title, overall badge, run list. `CardBody`/`RunRow` are internal.    |
+| [`PinnedRepoCard`](../src/components/PinnedRepoCard.tsx)                      | `data`                             | Pinned repo above the folders; one column per environment (branch) with badge + runs. |
 | [`RepoBranchCard`](../src/components/RepoBranchCard.tsx)                      | `data`, `showOwner?`               | One repo's unmerged branches, each with a status badge + its runs.             |
 | [`StatusBadge`](../src/components/StatusBadge.tsx)                            | `status`, `compact?`               | Coloured badge (or dot) for a `PipelineStatus`.                                 |
 | [`StatusSummary`](../src/components/StatusSummary.tsx)                        | `summary`, `hideZeros?`            | Inline list of status dots + counts. Shared by header and folders.             |

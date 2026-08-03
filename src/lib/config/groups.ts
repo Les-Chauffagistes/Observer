@@ -10,6 +10,35 @@ export interface RepoGroupConfig {
   readonly repos: readonly RepoRef[];
 }
 
+/**
+ * One deployment environment tracked for the pinned repository: a human label
+ * (e.g. `Production`) paired with the branch whose latest pipeline reflects that
+ * environment's state (e.g. `main`).
+ */
+export interface EnvironmentConfig {
+  readonly label: string;
+  readonly branch: string;
+}
+
+/**
+ * The single **pinned** repository, shown above every folder with its
+ * per-environment pipeline state highlighted side by side. Meant for a repo
+ * that does not fit the normal folders — typically a GitOps/deployment repo.
+ */
+export interface PinnedRepoConfig {
+  readonly repo: RepoRef;
+  readonly environments: readonly EnvironmentConfig[];
+}
+
+/**
+ * Default environments for a pinned repository when none are configured:
+ * `develop` → Staging and `main` → Production, in promotion order.
+ */
+export const DEFAULT_PINNED_ENVIRONMENTS: readonly EnvironmentConfig[] = [
+  { label: "Staging", branch: "develop" },
+  { label: "Production", branch: "main" },
+];
+
 /** Resolved contents of `observer.config.json`. */
 export interface GroupsConfig {
   readonly groups: readonly RepoGroupConfig[];
@@ -19,6 +48,11 @@ export interface GroupsConfig {
    * repositories that are not relevant.
    */
   readonly includeUngrouped: boolean;
+  /**
+   * A single repository pinned at the top of the dashboard with its
+   * per-environment pipeline state highlighted, or `null` when unset.
+   */
+  readonly pinned: PinnedRepoConfig | null;
 }
 
 const CONFIG_FILENAME = "observer.config.json";
@@ -60,6 +94,70 @@ function parseGroup(
   return { name: group.name.trim(), repos };
 }
 
+function parseEnvironment(
+  raw: unknown,
+  index: number,
+): EnvironmentConfig {
+  const context = `${CONFIG_FILENAME} pinned.environments[${index}]`;
+  const env = assertObject(raw, context);
+
+  if (typeof env.label !== "string" || env.label.trim() === "") {
+    throw new ConfigError(`${context}.label must be a non-empty string.`);
+  }
+  if (typeof env.branch !== "string" || env.branch.trim() === "") {
+    throw new ConfigError(`${context}.branch must be a non-empty string.`);
+  }
+
+  return { label: env.label.trim(), branch: env.branch.trim() };
+}
+
+/**
+ * Parse the optional `pinned` entry. Accepts either a bare string
+ * (`"owner/repo"` / `"repo"`, using the default environments) or an object with
+ * a `repo` and an optional `environments` array.
+ */
+function parsePinned(
+  raw: unknown,
+  defaultOwner: string | null,
+): PinnedRepoConfig {
+  const context = `${CONFIG_FILENAME} pinned`;
+
+  if (typeof raw === "string") {
+    return {
+      repo: resolveRepoEntry(raw.trim(), defaultOwner, context),
+      environments: DEFAULT_PINNED_ENVIRONMENTS,
+    };
+  }
+
+  const pinned = assertObject(raw, context);
+
+  if (typeof pinned.repo !== "string" || pinned.repo.trim() === "") {
+    throw new ConfigError(
+      `${context}.repo must be a non-empty string ("repo" or "owner/repo").`,
+    );
+  }
+  const repo = resolveRepoEntry(pinned.repo.trim(), defaultOwner, `${context}.repo`);
+
+  if (pinned.environments === undefined) {
+    return { repo, environments: DEFAULT_PINNED_ENVIRONMENTS };
+  }
+  if (!Array.isArray(pinned.environments)) {
+    throw new ConfigError(`${context}.environments must be an array.`);
+  }
+  if (pinned.environments.length === 0) {
+    throw new ConfigError(
+      `${context}.environments must list at least one environment.`,
+    );
+  }
+
+  return {
+    repo,
+    environments: pinned.environments.map((env, index) =>
+      parseEnvironment(env, index),
+    ),
+  };
+}
+
 function parseGroupsConfig(
   raw: unknown,
   defaultOwner: string | null,
@@ -83,6 +181,10 @@ function parseGroupsConfig(
       parseGroup(group, index, defaultOwner),
     ),
     includeUngrouped: (config.includeUngrouped as boolean | undefined) ?? true,
+    pinned:
+      config.pinned === undefined
+        ? null
+        : parsePinned(config.pinned, defaultOwner),
   };
 }
 

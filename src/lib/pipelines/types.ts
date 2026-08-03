@@ -84,3 +84,26 @@ export interface BranchOverview {
   readonly repositories: readonly RepoBranchPipelines[];
   readonly generatedAt: string;
 }
+
+/**
+ * One deployment environment of the pinned repository, pairing a human label
+ * (e.g. `Production`) with the latest pipeline state observed on its branch
+ * (e.g. `main`). `pipelines` is `null` when that branch has no runs.
+ */
+export interface EnvironmentPipelines {
+  readonly label: string;
+  readonly branch: string;
+  readonly pipelines: BranchPipelines | null;
+}
+
+/**
+ * The pinned repository shown above every folder, with the pipeline result of
+ * each configured environment (e.g. `develop` = staging, `main` = production)
+ * highlighted side by side.
+ */
+export interface PinnedRepoPipelines {
+  readonly repo: RepoRef;
+  readonly environments: readonly EnvironmentPipelines[];
+  /** Set when the repository could not be fetched; environments are then empty. */
+  readonly error: string | null;
+}

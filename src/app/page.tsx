@@ -16,5 +16,11 @@ export default async function Home() {
     return <SetupNotice message={result.message} />;
   }
 
-  return <PipelineDashboard overview={result.overview} groups={result.groups} />;
+  return (
+    <PipelineDashboard
+      overview={result.overview}
+      groups={result.groups}
+      pinned={result.pinned}
+    />
+  );
 }
