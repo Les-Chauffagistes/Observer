@@ -26,11 +26,16 @@ Template: [`.env.example`](../.env.example). Local values go in `.env.local`
 | `GITHUB_REPOS`              | see \*   | `[]`                     | Comma/space separated repo entries (bare `repo` or `owner/repo`). |
 | `GITHUB_API_URL`            | no       | `https://api.github.com` | API base URL (change for GitHub Enterprise Server).              |
 | `GITHUB_REVALIDATE_SECONDS` | no       | `30`                     | Cache lifetime applied to GitHub responses.                     |
+| `GITHUB_WEBHOOK_SECRET`     | no       | `null`                   | Shared secret that verifies inbound GitHub workflow webhooks.   |
 
 \* At least one repository source must exist: `GITHUB_ORG`, `GITHUB_REPOS`, **or**
 a group in `observer.config.json`. `loadConfig` only requires the token; the
 "no repository source" check happens in
 [`loadOverview`](../src/lib/pipelines/index.ts) because groups are also a source.
+
+`GITHUB_WEBHOOK_SECRET` is only required when enabling live workflow updates.
+Use a high-entropy value and configure the same value as the GitHub webhook
+secret; the application rejects unsigned or incorrectly signed deliveries.
 
 ### Repository entry resolution
 

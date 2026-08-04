@@ -66,7 +66,7 @@ export async function resolveRepositories(
 }
 
 /** Fetch and project a single repository's pipelines, isolating failures. */
-async function fetchRepoPipelines(
+export async function getRepositoryPipelines(
   client: GitHubClient,
   repo: RepoRef,
 ): Promise<RepoPipelines> {
@@ -104,7 +104,7 @@ export async function getPipelineOverview(
 ): Promise<PipelineOverview> {
   const repos = await resolveRepositories(client, config, options);
   const repositories = await Promise.all(
-    repos.map((repo) => fetchRepoPipelines(client, repo)),
+    repos.map((repo) => getRepositoryPipelines(client, repo)),
   );
 
   return { repositories, generatedAt: new Date().toISOString() };
@@ -123,7 +123,7 @@ const BRANCH_VIEW_RUN_LIMIT = 100;
  * (`develop`/`main`/`master`) are dropped, so only branches with outstanding,
  * unmerged work remain.
  */
-async function fetchRepoBranchPipelines(
+export async function getRepositoryBranchPipelines(
   client: GitHubClient,
   repo: RepoRef,
 ): Promise<RepoBranchPipelines> {
@@ -201,7 +201,7 @@ export async function getBranchOverview(
 ): Promise<BranchOverview> {
   const repos = await resolveRepositories(client, config, options);
   const repositories = await Promise.all(
-    repos.map((repo) => fetchRepoBranchPipelines(client, repo)),
+    repos.map((repo) => getRepositoryBranchPipelines(client, repo)),
   );
 
   return { repositories, generatedAt: new Date().toISOString() };

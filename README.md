@@ -23,6 +23,8 @@ of microservice repositories, giving the single overview the GitHub UI does not.
 - Latest run per workflow, per repository, with a normalised status badge.
 - Per-repository fault isolation: one failing repo never breaks the dashboard.
 - Brief fetch-layer caching to stay within GitHub API rate limits.
+- Optional GitHub webhooks push targeted CI updates to open dashboards without
+  polling or a full page reload.
 
 ## Getting started
 
@@ -71,6 +73,7 @@ so the same image works across environments without rebuilding.
 | `GITHUB_REPOS`              | one of\* | Bare `repo` names (owner = `GITHUB_ORG`) or `owner/repo`. |
 | `GITHUB_API_URL`            | no       | API base URL (default `https://api.github.com`).         |
 | `GITHUB_REVALIDATE_SECONDS` | no       | Cache lifetime for GitHub responses (default `30`).      |
+| `GITHUB_WEBHOOK_SECRET`     | no       | Shared secret used to verify GitHub workflow webhooks.   |
 
 \* At least one repository source must exist: `GITHUB_ORG`, `GITHUB_REPOS`, or a
 group in `observer.config.json`.
@@ -140,7 +143,7 @@ src/
     github/      Typed GitHub REST client, error types, API types.
     pipelines/   Domain model, mappers, aggregation, grouping, composition root.
     format/      Presentation-agnostic formatting helpers.
-  components/    Server components rendering the dashboard.
+  components/    Dashboard presentation and live-update client state.
   app/           Next.js App Router entry (page = composition + render).
 ```
 
@@ -150,7 +153,8 @@ Key boundaries:
 - **`pipelines/`** translates those payloads into a UI-agnostic domain model
   (`mappers.ts`), aggregates them (`service.ts`), and exposes a single
   composition root, `loadOverview()`.
-- **`components/`** never talk to GitHub directly; they render domain types.
+- **`components/`** never talk to GitHub directly; dashboard shells subscribe
+  to SSE and request only the affected repository from an app route.
 
 This separation means new data sources or views can be added without touching
 the client, and the client can evolve without touching the UI.

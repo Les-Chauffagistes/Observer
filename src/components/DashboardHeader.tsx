@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { OverviewSummary } from "@/lib/pipelines";
+import type { OverviewSummary } from "@/lib/pipelines/summary";
 import { StatusSummary } from "@/components/StatusSummary";
 import { ViewNav, type View } from "@/components/ViewNav";
 import styles from "./PipelineDashboard.module.css";

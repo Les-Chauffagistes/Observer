@@ -12,4 +12,5 @@ services:
       - GITHUB_REPOS=${GITHUB_REPOS}
       - GITHUB_API_URL=${GITHUB_API_URL:-https://api.github.com}
       - GITHUB_REVALIDATE_SECONDS=${GITHUB_REVALIDATE_SECONDS:-30}
+      - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET}
     restart: unless-stopped

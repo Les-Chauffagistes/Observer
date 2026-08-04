@@ -21,6 +21,8 @@ export {
   getBranchOverview,
   getPinnedRepo,
   getPipelineOverview,
+  getRepositoryBranchPipelines,
+  getRepositoryPipelines,
   resolveRepositories,
 } from "@/lib/pipelines/service";
 export { groupRepositories, UNGROUPED_LABEL } from "@/lib/pipelines/grouping";

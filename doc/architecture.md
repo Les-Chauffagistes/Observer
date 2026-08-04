@@ -14,8 +14,8 @@ Dependencies point **downward only**. A layer may import from layers below it,
 never above.
 
 ```
-app/  (Next.js route, server component)
-  └── components/  (presentation, renders domain types)
+app/  (Next.js pages + API routes)
+  └── components/  (presentation + targeted live state)
         └── lib/pipelines/  (domain model + aggregation + composition root)
               ├── lib/config/    (configuration parsing/validation)
               ├── lib/github/    (typed REST client, raw payloads)
@@ -28,8 +28,8 @@ app/  (Next.js route, server component)
 | [`src/lib/config`](../src/lib/config)                     | Parse & validate env + `observer.config.json`                      | `github` (types only)             | Perform network I/O                        |
 | [`src/lib/pipelines`](../src/lib/pipelines)               | Domain model, mapping, aggregation, grouping, composition root     | `config`, `github`, `format`      | Import from `components`/`app`             |
 | [`src/lib/format`](../src/lib/format)                     | Pure, presentation-agnostic formatting                             | (nothing)                         | Depend on domain or UI                     |
-| [`src/components`](../src/components)                     | Render domain types into HTML                                      | `lib/*`                           | Call GitHub directly                       |
-| [`src/app`](../src/app)                                   | Compose (`loadOverview`) and render                                | `lib/pipelines`, `components`     | Contain business logic                     |
+| [`src/components`](../src/components)                     | Render domain types; dashboard shells reconcile SSE updates        | client-safe `lib/*`               | Call GitHub directly                       |
+| [`src/app`](../src/app)                                   | Compose pages; expose webhook, SSE and targeted-read routes        | `lib/pipelines`, `components`     | Put domain mapping in route handlers       |
 
 **Key boundary:** `github/` returns *raw* GitHub payloads; translation into the
 UI-agnostic domain model happens in `pipelines/` (see
@@ -44,6 +44,8 @@ evolve without touching the UI, and vice versa.
 | [`lib/github/types.ts`](../src/lib/github/types.ts)                 | Raw GitHub API typings + `RepoRef`                                            | [github-integration.md](./github-integration.md) |
 | [`lib/github/errors.ts`](../src/lib/github/errors.ts)               | `GitHubApiError` (carries HTTP status)                                        | [github-integration.md](./github-integration.md) |
 | [`lib/github/repo.ts`](../src/lib/github/repo.ts)                   | `repoFullName`, `repoRefKey` (dedup/lookup key)                              | [domain-model.md](./domain-model.md)             |
+| [`lib/github/webhook.ts`](../src/lib/github/webhook.ts)             | HMAC validation + narrow GitHub webhook parsing                              | [github-integration.md](./github-integration.md) |
+| [`lib/live-events.ts`](../src/lib/live-events.ts)                   | Single-instance SSE subscriber registry and publisher                         | [github-integration.md](./github-integration.md) |
 | [`lib/config/index.ts`](../src/lib/config/index.ts)                 | `AppConfig`, `loadConfig`, `resolveRepoEntry`, `ConfigError`                 | [configuration.md](./configuration.md)           |
 | [`lib/config/groups.ts`](../src/lib/config/groups.ts)               | `observer.config.json` loader (`GroupsConfig`, `loadGroupsConfig`)           | [configuration.md](./configuration.md)           |
 | [`lib/pipelines/types.ts`](../src/lib/pipelines/types.ts)           | Domain types (`PipelineRun`, `RepoPipelines`, `RepoBranchPipelines`, …)      | [domain-model.md](./domain-model.md)             |
@@ -116,8 +118,10 @@ per-repo fault isolation and fetch caching still apply.
 ## Rendering flow
 
 [`page.tsx`](../src/app/page.tsx) is a `force-dynamic` async server component.
-It calls `loadOverview()` and hands the result to the UI. See the component tree
-in [ui.md](./ui.md).
+It calls `loadOverview()` and hands the initial result to the UI. Dashboard
+shells are client components because they keep a local snapshot and reconcile
+SSE-triggered updates; their presentational children remain data-free. See the
+component tree in [ui.md](./ui.md).
 
 ```
 page.tsx
@@ -128,6 +132,30 @@ page.tsx
      └─ RepoGroupSection*       (folder view — one <details> per group)
          └─ RepoGrid → RepoPipelineCard*
 ```
+
+## Live update flow
+
+```mermaid
+sequenceDiagram
+    participant GH as GitHub webhook
+    participant Hook as POST /api/github/webhook
+    participant Cache as Next Data Cache
+    participant SSE as GET /api/live-events
+    participant UI as Active dashboard
+    participant Live as GET /api/live/repository
+
+    GH->>Hook: workflow_run / workflow_job + HMAC
+    Hook->>Hook: verify signature and normalize repository
+    Hook->>Cache: invalidate github-api and dashboard paths
+    Hook->>SSE: publish repository-changed
+    SSE-->>UI: repository-changed
+    UI->>Live: request only affected repository (no-store)
+    Live-->>UI: replacement domain projection
+    UI->>UI: replace repository, recompute summaries/pivot
+```
+
+The SSE registry is deliberately in-memory and therefore requires a single
+application instance. A multi-instance deployment must use a shared broker.
 
 ## Where to make a change
 

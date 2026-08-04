@@ -20,6 +20,8 @@ export interface AppConfig {
   readonly repos: readonly RepoRef[];
   /** Cache lifetime, in seconds, applied to GitHub responses. */
   readonly revalidateSeconds: number;
+  /** Optional secret used to authenticate inbound GitHub webhooks. */
+  readonly webhookSecret: string | null;
 }
 
 /** Raised when the environment does not provide a usable configuration. */
@@ -124,5 +126,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     org,
     repos,
     revalidateSeconds: parseRevalidate(env.GITHUB_REVALIDATE_SECONDS),
+    webhookSecret: env.GITHUB_WEBHOOK_SECRET?.trim() || null,
   };
 }

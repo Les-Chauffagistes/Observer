@@ -1,13 +1,20 @@
-import type { Pipeline, PipelineOverview } from "@/lib/pipelines";
-import { summarizePipelines } from "@/lib/pipelines";
+"use client";
+
+import { useCallback, useState } from "react";
+import { groupByPipeline } from "@/lib/pipelines/byPipeline";
+import { summarizePipelines } from "@/lib/pipelines/summary";
+import type { RepoPipelines } from "@/lib/pipelines/types";
+import type { PipelineOverview } from "@/lib/pipelines/types";
+import { repoRefKey } from "@/lib/github/repo";
 import { RelativeTime } from "@/components/RelativeTime";
+import { useLiveRepositoryUpdates } from "@/components/useLiveRepositoryUpdates";
 import { PipelineSection } from "@/components/PipelineSection";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import styles from "./PipelineDashboard.module.css";
 
 interface PipelineOrientedDashboardProps {
   readonly overview: PipelineOverview;
-  readonly pipelines: readonly Pipeline[];
+  readonly repositories: readonly RepoPipelines[];
 }
 
 /**
@@ -17,8 +24,42 @@ interface PipelineOrientedDashboardProps {
  */
 export function PipelineOrientedDashboard({
   overview,
-  pipelines,
+  repositories,
 }: PipelineOrientedDashboardProps) {
+  const [liveRepositories, setLiveRepositories] = useState(repositories);
+  const [liveOverview, setLiveOverview] = useState(overview);
+  const pipelines = groupByPipeline(liveRepositories);
+  const handlesRepository = useCallback(
+    (owner: string, repository: string) =>
+      liveRepositories.some(
+        (item) => repoRefKey(item.repo) === `${owner}/${repository}`.toLowerCase(),
+      ),
+    [liveRepositories],
+  );
+  const updateRepository = useCallback((owner: string, repository: string) => {
+    void fetch(
+      `/api/live/repository?owner=${encodeURIComponent(owner)}&repository=${encodeURIComponent(repository)}&projection=pipelines`,
+    )
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Live update failed (${response.status}).`);
+        return response.json() as Promise<{
+          repository: RepoPipelines;
+          generatedAt: string;
+        }>;
+      })
+      .then((update) => {
+        const key = repoRefKey(update.repository.repo);
+        setLiveRepositories((current) =>
+          current.map((item) =>
+            repoRefKey(item.repo) === key ? update.repository : item,
+          ),
+        );
+        setLiveOverview((current) => ({ ...current, generatedAt: update.generatedAt }));
+      })
+      .catch((error: unknown) => console.error("Could not apply live CI update.", error));
+  }, []);
+  useLiveRepositoryUpdates(handlesRepository, updateRepository);
+
   const summary = summarizePipelines(pipelines);
 
   // When every repository across all pipelines shares one owner, drop the
@@ -41,7 +82,7 @@ export function PipelineOrientedDashboard({
         subtitle={
           <>
             {pipelines.length} pipeline{pipelines.length === 1 ? "" : "s"} ·
-            updated <RelativeTime dateTime={overview.generatedAt} />
+            updated <RelativeTime dateTime={liveOverview.generatedAt} />
           </>
         }
       />

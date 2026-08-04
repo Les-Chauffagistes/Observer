@@ -1,4 +1,4 @@
-import { loadBranchOverview, withUnmergedBranches } from "@/lib/pipelines";
+import { loadBranchOverview } from "@/lib/pipelines";
 import { BranchDashboard } from "@/components/BranchDashboard";
 import { SetupNotice } from "@/components/SetupNotice";
 
@@ -18,12 +18,5 @@ export default async function Branches() {
     return <SetupNotice message={result.message} />;
   }
 
-  // Only surface repositories that actually have unmerged branches (or a fetch
-  // error to report), so the view stays focused on outstanding work.
-  const groups = result.groups.map((group) => ({
-    ...group,
-    repositories: withUnmergedBranches(group.repositories),
-  }));
-
-  return <BranchDashboard overview={result.overview} groups={groups} />;
+  return <BranchDashboard overview={result.overview} groups={result.groups} />;
 }

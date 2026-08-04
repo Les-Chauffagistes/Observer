@@ -1,5 +1,5 @@
-import type { Pipeline } from "@/lib/pipelines";
-import { summarizePipeline } from "@/lib/pipelines";
+import type { Pipeline } from "@/lib/pipelines/byPipeline";
+import { summarizePipeline } from "@/lib/pipelines/summary";
 import { repoFullName } from "@/lib/github/repo";
 import { RelativeTime } from "@/components/RelativeTime";
 import { StatusBadge } from "@/components/StatusBadge";

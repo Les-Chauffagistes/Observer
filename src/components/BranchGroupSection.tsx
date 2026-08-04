@@ -1,5 +1,6 @@
-import type { PipelineGroup, RepoBranchPipelines } from "@/lib/pipelines";
-import { summarizeBranches } from "@/lib/pipelines";
+import type { PipelineGroup } from "@/lib/pipelines/grouping";
+import { summarizeBranches } from "@/lib/pipelines/summary";
+import type { RepoBranchPipelines } from "@/lib/pipelines/types";
 import { BranchGrid } from "@/components/BranchGrid";
 import { StatusSummary } from "@/components/StatusSummary";
 import styles from "./RepoGroupSection.module.css";

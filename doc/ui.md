@@ -1,9 +1,10 @@
 # UI
 
-The UI is built entirely from **React Server Components** (no client-side
-JavaScript) plus **CSS Modules**. Components render domain types only — they
-never call GitHub. See [architecture.md](./architecture.md) and
-[domain-model.md](./domain-model.md).
+Pages fetch the initial data with React Server Components. The three dashboard
+shells are client components: they keep that initial snapshot, subscribe to
+Server-Sent Events, and replace only the repository affected by a webhook.
+Presentational components use CSS Modules and never call GitHub directly. See
+[architecture.md](./architecture.md) and [domain-model.md](./domain-model.md).
 
 All components live in [`src/components`](../src/components); the entry points
 are [`src/app/page.tsx`](../src/app/page.tsx) (by repository),
@@ -25,9 +26,9 @@ app/page.tsx  (force-dynamic, async server component → loadOverview())
              ├─ StatusBadge  { status }         overall + per-run
              └─ (internal) CardBody → RunRow*
 
-app/pipelines/page.tsx  (force-dynamic → loadOverview() + groupByPipeline())
+app/pipelines/page.tsx  (force-dynamic → loadOverview())
  ├─ SetupNotice                         when result.ok === false
- └─ PipelineOrientedDashboard  { overview, pipelines }
+ └─ PipelineOrientedDashboard  { overview, repositories }
      ├─ ViewNav  { active }             repository ⇄ pipeline ⇄ branch toggle
      ├─ StatusSummary  { summary }      header status counts (all pipelines)
      └─ PipelineSection*  { pipeline }  one collapsible folder per pipeline
@@ -68,7 +69,7 @@ The dashboard offers three views of the same fetched data, switched via
 | Component                                                                    | Props                              | Responsibility                                                                 |
 | ---------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------ |
 | [`PipelineDashboard`](../src/components/PipelineDashboard.tsx)                | `overview`, `groups`, `pinned?`    | Repository view shell: header, optional pinned card, computes **visible** repos, chooses flat vs folder layout. |
-| [`PipelineOrientedDashboard`](../src/components/PipelineOrientedDashboard.tsx) | `overview`, `pipelines`           | Pipeline view shell: header + one `PipelineSection` per pipeline.              |
+| [`PipelineOrientedDashboard`](../src/components/PipelineOrientedDashboard.tsx) | `overview`, `repositories`       | Pipeline view shell: derives the pivot locally so it can reconcile live updates. |
 | [`BranchDashboard`](../src/components/BranchDashboard.tsx)                    | `overview`, `groups`               | Branch view shell: header, flat vs folder layout of `RepoBranchCard`s.        |
 | [`PipelineSection`](../src/components/PipelineSection.tsx)                    | `pipeline`, `showOwner`, `defaultOpen` | One collapsible pipeline folder (native `<details>`) listing its repos + status. |
 | [`ViewNav`](../src/components/ViewNav.tsx)                                    | `active`                           | Repository ⇄ pipeline ⇄ branch view toggle (plain links).                     |
@@ -114,6 +115,6 @@ edit `statusPresentation.ts`.
   (this bit us once; see [how-to.md](./how-to.md#gotchas)).
 - **Theme via variables**: use the tokens in `globals.css` rather than
   hard-coded colours, so light/dark both work.
-- **No client JS**: prefer native elements (`<details>`/`<summary>` for
-  collapsible folders). If you ever need interactivity, add a `"use client"`
-  component — but keep it a leaf, and keep data-fetching in server components.
+- **Targeted client state only**: dashboard shells use `"use client"` for live
+  updates. Keep presentational children free of fetching and use native
+  elements (`<details>`/`<summary>`) for local interactions.

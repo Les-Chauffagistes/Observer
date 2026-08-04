@@ -23,8 +23,10 @@ Constructed with `{ token, baseUrl, revalidateSeconds }`
 - **Headers**: `Accept: application/vnd.github+json`,
   `Authorization: Bearer <token>`,
   `X-GitHub-Api-Version: 2022-11-28`.
-- **Caching**: each GET uses Next.js `fetch(..., { next: { revalidate: revalidateSeconds } })`.
-  Tune via `GITHUB_REVALIDATE_SECONDS` (see [configuration.md](./configuration.md)).
+- **Caching**: normal GETs use Next.js `fetch(..., { next: { revalidate:
+  revalidateSeconds, tags: ["github-api"] } })`. Tune via
+  `GITHUB_REVALIDATE_SECONDS` (see [configuration.md](./configuration.md)).
+  A live repository update explicitly uses `cache: "no-store"`.
 - **Query params**: built via `URL.searchParams` from a typed map.
 
 ### Methods
@@ -89,3 +91,24 @@ types: `GitHubRepo`, `GitHubWorkflowRun`, `GitHubWorkflowRunsResponse`,
 
 Auth scopes: a token needs Actions read access — fine-grained
 "Actions: Read-only" + "Metadata: Read-only", or classic `repo` / `public_repo`.
+
+## Live workflow updates
+
+For a single-instance self-hosted deployment, configure an organization webhook
+at `https://<observer-host>/api/github/webhook`, with a JSON payload, a secret
+matching `GITHUB_WEBHOOK_SECRET`, and the `Workflow runs` and `Workflow jobs`
+events enabled. Observer validates `X-Hub-Signature-256` before accepting a
+delivery.
+
+Accepted deliveries are sent to open dashboards through
+`GET /api/live-events` using Server-Sent Events. The affected browser then
+reloads only the changed repository's projection without polling or a full page
+reload. Reverse proxies must not buffer this endpoint; the response includes
+`X-Accel-Buffering: no` for Nginx-compatible proxies.
+
+Before publishing a valid event, the webhook invalidates the `github-api` cache
+tag and the three dashboard paths. An ordinary browser reload therefore sees
+fresh GitHub data even when no SSE client is connected.
+
+The event hub is in-memory by design. It is appropriate for one application
+instance; use a shared pub/sub broker before scaling horizontally.

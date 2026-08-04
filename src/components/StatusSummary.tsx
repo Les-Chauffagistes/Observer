@@ -1,4 +1,4 @@
-import type { OverviewSummary } from "@/lib/pipelines";
+import type { OverviewSummary } from "@/lib/pipelines/summary";
 import {
   STATUS_PRESENTATION,
   SUMMARY_STATUSES,

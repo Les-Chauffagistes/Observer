@@ -1,4 +1,4 @@
-import type { RepoBranchPipelines } from "@/lib/pipelines";
+import type { RepoBranchPipelines } from "@/lib/pipelines/types";
 import { RepoBranchCard } from "@/components/RepoBranchCard";
 import styles from "./RepoGrid.module.css";
 

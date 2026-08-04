@@ -1,4 +1,4 @@
-import { groupByPipeline, loadOverview } from "@/lib/pipelines";
+import { loadOverview } from "@/lib/pipelines";
 import { PipelineOrientedDashboard } from "@/components/PipelineOrientedDashboard";
 import { SetupNotice } from "@/components/SetupNotice";
 
@@ -19,12 +19,10 @@ export default async function Pipelines() {
   const visibleRepositories = result.groups.flatMap((group) => [
     ...group.repositories,
   ]);
-  const pipelines = groupByPipeline(visibleRepositories);
-
   return (
     <PipelineOrientedDashboard
       overview={result.overview}
-      pipelines={pipelines}
+      repositories={visibleRepositories}
     />
   );
 }

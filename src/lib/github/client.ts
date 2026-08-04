@@ -11,6 +11,7 @@ import type {
 } from "@/lib/github/types";
 
 const GITHUB_API_VERSION = "2022-11-28";
+export const GITHUB_CACHE_TAG = "github-api";
 
 /** Options accepted when constructing a {@link GitHubClient}. */
 export interface GitHubClientOptions {
@@ -18,6 +19,8 @@ export interface GitHubClientOptions {
   readonly baseUrl: string;
   /** Cache lifetime (seconds) applied to GET requests via Next's fetch. */
   readonly revalidateSeconds: number;
+  /** Bypass Next's data cache for event-triggered live synchronisation. */
+  readonly cacheMode?: "default" | "no-store";
 }
 
 interface RequestOptions {
@@ -35,11 +38,13 @@ export class GitHubClient {
   private readonly token: string;
   private readonly baseUrl: string;
   private readonly revalidateSeconds: number;
+  private readonly cacheMode: "default" | "no-store";
 
   constructor(options: GitHubClientOptions) {
     this.token = options.token;
     this.baseUrl = options.baseUrl.replace(/\/+$/, "");
     this.revalidateSeconds = options.revalidateSeconds;
+    this.cacheMode = options.cacheMode ?? "default";
   }
 
   /**
@@ -142,7 +147,14 @@ export class GitHubClient {
         Authorization: `Bearer ${this.token}`,
         "X-GitHub-Api-Version": GITHUB_API_VERSION,
       },
-      next: { revalidate: this.revalidateSeconds },
+      ...(this.cacheMode === "no-store"
+        ? { cache: "no-store" as const }
+        : {
+            next: {
+              revalidate: this.revalidateSeconds,
+              tags: [GITHUB_CACHE_TAG],
+            },
+          }),
     });
 
     if (!response.ok) {
