@@ -1,6 +1,6 @@
 import type { Pipeline, PipelineOverview } from "@/lib/pipelines";
 import { summarizePipelines } from "@/lib/pipelines";
-import { formatRelativeTime } from "@/lib/format/time";
+import { RelativeTime } from "@/components/RelativeTime";
 import { PipelineSection } from "@/components/PipelineSection";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import styles from "./PipelineDashboard.module.css";
@@ -41,7 +41,7 @@ export function PipelineOrientedDashboard({
         subtitle={
           <>
             {pipelines.length} pipeline{pipelines.length === 1 ? "" : "s"} ·
-            updated {formatRelativeTime(overview.generatedAt)}
+            updated <RelativeTime dateTime={overview.generatedAt} />
           </>
         }
       />

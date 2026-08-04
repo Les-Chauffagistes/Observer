@@ -1,5 +1,5 @@
 import type { PipelineRun, RepoPipelines } from "@/lib/pipelines/types";
-import { formatRelativeTime } from "@/lib/format/time";
+import { RelativeTime } from "@/components/RelativeTime";
 import { StatusBadge } from "@/components/StatusBadge";
 import styles from "./RepoPipelineCard.module.css";
 
@@ -81,7 +81,7 @@ function RunRow({ run }: { readonly run: PipelineRun }) {
       </a>
       <span className={styles.meta}>
         {run.branch && <span className={styles.branch}>{run.branch}</span>}
-        <span>{formatRelativeTime(run.updatedAt)}</span>
+        <RelativeTime dateTime={run.updatedAt} />
       </span>
     </li>
   );

@@ -1,7 +1,7 @@
 import type { Pipeline } from "@/lib/pipelines";
 import { summarizePipeline } from "@/lib/pipelines";
 import { repoFullName } from "@/lib/github/repo";
-import { formatRelativeTime } from "@/lib/format/time";
+import { RelativeTime } from "@/components/RelativeTime";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StatusSummary } from "@/components/StatusSummary";
 import styles from "./PipelineSection.module.css";
@@ -67,7 +67,7 @@ export function PipelineSection({
                   {run.branch && (
                     <span className={styles.branch}>{run.branch}</span>
                   )}
-                  <span>{formatRelativeTime(run.updatedAt)}</span>
+                  <RelativeTime dateTime={run.updatedAt} />
                 </span>
               </li>
             );

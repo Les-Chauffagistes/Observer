@@ -1,7 +1,7 @@
 import type { BranchOverview, PipelineGroup } from "@/lib/pipelines";
 import type { RepoBranchPipelines } from "@/lib/pipelines";
 import { summarizeBranches } from "@/lib/pipelines";
-import { formatRelativeTime } from "@/lib/format/time";
+import { RelativeTime } from "@/components/RelativeTime";
 import { BranchGrid } from "@/components/BranchGrid";
 import { BranchGroupSection } from "@/components/BranchGroupSection";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -51,7 +51,7 @@ export function BranchDashboard({ overview, groups }: BranchDashboardProps) {
         subtitle={
           <>
             {branchCount} unmerged branch{branchCount === 1 ? "" : "es"} ·
-            updated {formatRelativeTime(overview.generatedAt)}
+            updated <RelativeTime dateTime={overview.generatedAt} />
           </>
         }
       />

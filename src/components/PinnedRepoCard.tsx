@@ -3,7 +3,7 @@ import type {
   PinnedRepoPipelines,
 } from "@/lib/pipelines/types";
 import { repoFullName } from "@/lib/github/repo";
-import { formatRelativeTime } from "@/lib/format/time";
+import { RelativeTime } from "@/components/RelativeTime";
 import { StatusBadge } from "@/components/StatusBadge";
 import { STATUS_PRESENTATION } from "@/components/statusPresentation";
 import styles from "./PinnedRepoCard.module.css";
@@ -90,7 +90,7 @@ function EnvironmentColumn({
                   {run.workflowName}
                 </a>
                 <span className={styles.meta}>
-                  {formatRelativeTime(run.updatedAt)}
+                  <RelativeTime dateTime={run.updatedAt} />
                 </span>
               </div>
               {run.jobs && run.jobs.length > 0 && (

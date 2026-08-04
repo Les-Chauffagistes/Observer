@@ -1,7 +1,7 @@
 import type { PipelineGroup, PipelineOverview } from "@/lib/pipelines";
 import { summarizeRepositories } from "@/lib/pipelines";
 import type { PinnedRepoPipelines } from "@/lib/pipelines/types";
-import { formatRelativeTime } from "@/lib/format/time";
+import { RelativeTime } from "@/components/RelativeTime";
 import { RepoGrid } from "@/components/RepoGrid";
 import { RepoGroupSection } from "@/components/RepoGroupSection";
 import { PinnedRepoCard } from "@/components/PinnedRepoCard";
@@ -55,7 +55,7 @@ export function PipelineDashboard({
           <>
             {summary.totalRepos} repositor
             {summary.totalRepos === 1 ? "y" : "ies"} · updated{" "}
-            {formatRelativeTime(overview.generatedAt)}
+            <RelativeTime dateTime={overview.generatedAt} />
           </>
         }
       />
