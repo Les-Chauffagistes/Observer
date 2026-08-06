@@ -18,4 +18,4 @@ README.md
 .DS_Store
 *.pem
 .env*
-!.env.example
+
