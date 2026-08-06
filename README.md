@@ -64,16 +64,28 @@ docker compose up --build
 Then open <http://localhost:3000>. All `GITHUB_*` variables are read at runtime,
 so the same image works across environments without rebuilding.
 
+`observer.config.json` (folder organisation) is optional and **not** baked into
+the image. When present it is read at runtime from `/app`, so mount it:
+
+```bash
+docker run --rm -p 3000:3000 --env-file .env \
+  -v "$(pwd)/observer.config.json:/app/observer.config.json:ro" \
+  observer:latest
+```
+
+The Compose file already declares this bind-mount — remove the `volumes` entry
+if you don't use folders.
+
 ## Configuration
 
-| Variable                    | Required | Description                                              |
-| --------------------------- | -------- | -------------------------------------------------------- |
-| `GITHUB_TOKEN`              | yes      | Token with Actions read access.                          |
-| `GITHUB_ORG`                | one of\* | Organisation whose repos are auto-discovered.            |
+| Variable                    | Required | Description                                               |
+|-----------------------------|----------|-----------------------------------------------------------|
+| `GITHUB_TOKEN`              | yes      | Token with Actions read access.                           |
+| `GITHUB_ORG`                | one of\* | Organisation whose repos are auto-discovered.             |
 | `GITHUB_REPOS`              | one of\* | Bare `repo` names (owner = `GITHUB_ORG`) or `owner/repo`. |
-| `GITHUB_API_URL`            | no       | API base URL (default `https://api.github.com`).         |
-| `GITHUB_REVALIDATE_SECONDS` | no       | Cache lifetime for GitHub responses (default `30`).      |
-| `GITHUB_WEBHOOK_SECRET`     | no       | Shared secret used to verify GitHub workflow webhooks.   |
+| `GITHUB_API_URL`            | no       | API base URL (default `https://api.github.com`).          |
+| `GITHUB_REVALIDATE_SECONDS` | no       | Cache lifetime for GitHub responses (default `30`).       |
+| `GITHUB_WEBHOOK_SECRET`     | no       | Shared secret used to verify GitHub workflow webhooks.    |
 
 \* At least one repository source must exist: `GITHUB_ORG`, `GITHUB_REPOS`, or a
 group in `observer.config.json`.
