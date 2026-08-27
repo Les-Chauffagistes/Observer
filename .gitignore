@@ -41,6 +41,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# observer folder config (copy from observer.config.example.json)
-/observer.config.json
+# observer folder config (copy from observer.config.example.yml)
+/observer.config.yml
 /doc/.obsidian

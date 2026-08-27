@@ -85,7 +85,7 @@ fetch (no runs) contribute to no pipeline.
 A folder: `{ name: string | null; repositories: readonly T[]; defaultOpen: boolean }`,
 generic over the per-repository payload `T` (default `RepoPipelines`).
 `name: null` is the implicit "everything" group used when no
-`observer.config.json` exists (rendered as a flat grid, not a folder). The
+`observer.config.yml` exists (rendered as a flat grid, not a folder). The
 branch-oriented view reuses the same folders with `T = RepoBranchPipelines`.
 
 ### `BranchPipelines` / `RepoBranchPipelines` / `BranchOverview` — [`byBranch.ts`](../src/lib/pipelines/byBranch.ts)
@@ -124,7 +124,7 @@ workflow on that environment's branch.
 
 Built by `getPinnedRepo(client, repo, environments)` in
 [`service.ts`](../src/lib/pipelines/service.ts), driven by the `pinned` entry of
-`observer.config.json`. The composition root
+`observer.config.yml`. The composition root
 ([`loadOverview`](../src/lib/pipelines/index.ts)) fetches it alongside the main
 overview and removes the pinned repo from the folders so it is shown only once.
 

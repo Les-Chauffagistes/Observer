@@ -24,7 +24,7 @@ interface PipelineDashboardProps {
 }
 
 /**
- * A single implicit group (no `observer.config.json`) is rendered as a plain
+ * A single implicit group (no `observer.config.yml`) is rendered as a plain
  * grid; anything else is rendered as collapsible folders.
  */
 function isFlat(groups: readonly PipelineGroup[]): boolean {

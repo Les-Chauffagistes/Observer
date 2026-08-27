@@ -14,5 +14,5 @@ services:
       - GITHUB_REVALIDATE_SECONDS=${GITHUB_REVALIDATE_SECONDS:-30}
       - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET}
     volumes:
-      - ./observer.config.json:/app/observer.config.json:ro
+      - ./observer.config.yml:/app/observer.config.yml:ro
     restart: unless-stopped

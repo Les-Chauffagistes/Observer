@@ -80,7 +80,7 @@ interface DashboardContext {
 }
 
 /**
- * Read configuration (environment + optional `observer.config.json`) and build
+ * Read configuration (environment + optional `observer.config.yml`) and build
  * a GitHub client. Returns a config-error result when no repository source is
  * configured, so callers can render setup instructions instead.
  */
@@ -97,7 +97,7 @@ async function resolveDashboardContext(): Promise<
       ok: false,
       reason: "config",
       message:
-        "No repositories configured. Set GITHUB_ORG, GITHUB_REPOS, or define groups in observer.config.json.",
+        "No repositories configured. Set GITHUB_ORG, GITHUB_REPOS, or define groups in observer.config.yml.",
     };
   }
 
@@ -119,7 +119,7 @@ async function resolveDashboardContext(): Promise<
 
 /**
  * Composition root for the dashboard: read configuration (environment +
- * optional `observer.config.json`), build a GitHub client, fetch every
+ * optional `observer.config.yml`), build a GitHub client, fetch every
  * observed repository, and organise the result into folders.
  *
  * Only configuration problems are caught here; unexpected failures (e.g. total

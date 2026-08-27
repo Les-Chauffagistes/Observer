@@ -50,7 +50,7 @@ knowledge.
 
 ## Change grouping / folder behaviour
 
-- **Schema** (new field in `observer.config.json`): extend `GroupsConfig` and
+- **Schema** (new field in `observer.config.yml`): extend `GroupsConfig` and
   its validation in [`config/groups.ts`](../src/lib/config/groups.ts), and
   update [`observer.config.example.json`](../observer.config.example.json).
 - **Partition logic** (how repos are placed in folders): edit
@@ -93,7 +93,7 @@ different projection/arrangement of already-fetched data.
    "force-dynamic"`, calling `loadOverview()`, guarding `!result.ok` with
    `SetupNotice`, then feeding the projection to the new dashboard. Derive
    visible repositories from `result.groups` (not `overview.repositories`) so
-   the view honours `observer.config.json` hiding, exactly like the home page.
+   the view honours `observer.config.yml` hiding, exactly like the home page.
 6. **Navigation** — add the route to
    [`ViewNav`](../src/components/ViewNav.tsx) and pass the correct `active` prop
    from each dashboard header. `ViewNav` is a plain-link toggle (no JS).
@@ -135,7 +135,7 @@ Flag this refactor explicitly when it arrives — see the note in
   the Turbopack build with *"Selector is not pure"*. Scope it with a local
   class: `.card code { … }`. See [ui.md](./ui.md#styling-conventions).
 - **Server vs client**: everything is a server component by default. Reading
-  files (`observer.config.json`) and env vars is fine on the server; never do it
+  files (`observer.config.yml`) and env vars is fine on the server; never do it
   from a `"use client"` component.
 - **`force-dynamic`**: [`page.tsx`](../src/app/page.tsx) opts out of static
   rendering so the dashboard is always live; GitHub responses are still cached

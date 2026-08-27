@@ -20,7 +20,7 @@ app/page.tsx  (force-dynamic, async server component → loadOverview())
      ├─ ViewNav  { active }             repository ⇄ pipeline ⇄ branch toggle
      ├─ StatusSummary  { summary }      header status counts (visible repos)
      ├─ PinnedRepoCard  { data }        pinned repo above folders (if configured)
-     ├─ RepoGrid  { repositories }      flat view (no observer.config.json)
+     ├─ RepoGrid  { repositories }      flat view (no observer.config.yml)
      └─ RepoGroupSection*  { group }    folder view (one per group)
          └─ RepoGrid → RepoPipelineCard*  { data, showOwner }
              ├─ StatusBadge  { status }         overall + per-run
@@ -40,7 +40,7 @@ app/branches/page.tsx  (force-dynamic → loadBranchOverview())
  └─ BranchDashboard  { overview, groups }
      ├─ ViewNav  { active }             repository ⇄ pipeline ⇄ branch toggle
      ├─ StatusSummary  { summary }      header status counts (unmerged branches)
-     ├─ BranchGrid  { repositories }    flat view (no observer.config.json)
+     ├─ BranchGrid  { repositories }    flat view (no observer.config.yml)
      └─ BranchGroupSection*  { group }  folder view (one per group)
          └─ BranchGrid → RepoBranchCard*  { data, showOwner }
              └─ (internal) BranchBlock* → StatusBadge + RunRow*

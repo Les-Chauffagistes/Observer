@@ -1,6 +1,8 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
+import { parse as parseYaml } from "yaml";
+
 import { ConfigError, resolveRepoEntry } from "@/lib/config";
 import type { RepoRef } from "@/lib/github/types";
 
@@ -39,7 +41,7 @@ export const DEFAULT_PINNED_ENVIRONMENTS: readonly EnvironmentConfig[] = [
   { label: "Production", branch: "main" },
 ];
 
-/** Resolved contents of `observer.config.json`. */
+/** Resolved contents of `observer.config.yml`. */
 export interface GroupsConfig {
   readonly groups: readonly RepoGroupConfig[];
   /**
@@ -55,7 +57,7 @@ export interface GroupsConfig {
   readonly pinned: PinnedRepoConfig | null;
 }
 
-const CONFIG_FILENAME = "observer.config.json";
+const CONFIG_FILENAME = "observer.config.yml";
 
 function assertObject(
   value: unknown,
@@ -189,7 +191,7 @@ function parseGroupsConfig(
 }
 
 /**
- * Load `observer.config.json` from the project root, if present.
+ * Load `observer.config.yml` from the project root, if present.
  *
  * The file is optional: when it is absent the dashboard falls back to a single
  * flat view. Bare repository names are resolved against `defaultOwner` (the
@@ -214,9 +216,9 @@ export async function loadGroupsConfig(
 
   let parsed: unknown;
   try {
-    parsed = JSON.parse(contents);
+    parsed = parseYaml(contents);
   } catch (error) {
-    throw new ConfigError(`${CONFIG_FILENAME} is not valid JSON: ${String(error)}`);
+    throw new ConfigError(`${CONFIG_FILENAME} is not valid YAML: ${String(error)}`);
   }
 
   return parseGroupsConfig(parsed, defaultOwner);

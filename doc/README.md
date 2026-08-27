@@ -30,7 +30,7 @@ then follow the links you need.
 - **[architecture.md](./architecture.md)** — Layered design, module map,
   dependency rules, and end-to-end data/render flow (with diagrams).
 - **[configuration.md](./configuration.md)** — Environment variables and the
-  optional `observer.config.json` folder file; repository resolution rules.
+  optional `observer.config.yml` folder file; repository resolution rules.
 - **[domain-model.md](./domain-model.md)** — The core types (`PipelineRun`,
   `RepoPipelines`, `PipelineGroup`, …) and how GitHub statuses are normalised.
 - **[github-integration.md](./github-integration.md)** — The typed REST client,
@@ -47,7 +47,7 @@ src/
   app/          Next.js App Router entry (page = composition + render)
   components/    Dashboard UI, live-update client state + CSS modules
   lib/
-    config/      Environment + observer.config.json parsing & validation
+    config/      Environment + observer.config.yml parsing & validation
     github/      Typed GitHub REST client, error types, API types, repo utils
     pipelines/   Domain model, mappers, aggregation, grouping, composition root
     format/      Presentation-agnostic formatting helpers

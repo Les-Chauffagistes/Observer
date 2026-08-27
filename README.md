@@ -16,7 +16,7 @@ of microservice repositories, giving the single overview the GitHub UI does not.
   `develop`/`main`/`master` and each branch's runs — so a feature branch's
   result is never masked by a later run on the default branch.
 - Organise repositories into collapsible **folders** and hide irrelevant ones
-  (`observer.config.json`).
+  (`observer.config.yml`).
 - **Pin** one key repository (e.g. a GitOps repo) at the very top, highlighting
   the latest pipeline result of each environment side by side — `develop`
   (staging) and `main` (production).
@@ -64,12 +64,12 @@ docker compose up --build
 Then open <http://localhost:3000>. All `GITHUB_*` variables are read at runtime,
 so the same image works across environments without rebuilding.
 
-`observer.config.json` (folder organisation) is optional and **not** baked into
+`observer.config.yml` (folder organisation) is optional and **not** baked into
 the image. When present it is read at runtime from `/app`, so mount it:
 
 ```bash
 docker run --rm -p 3000:3000 --env-file .env \
-  -v "$(pwd)/observer.config.json:/app/observer.config.json:ro" \
+  -v "$(pwd)/observer.config.yml:/app/observer.config.yml:ro" \
   observer:latest
 ```
 
@@ -88,22 +88,21 @@ if you don't use folders.
 | `GITHUB_WEBHOOK_SECRET`     | no       | Shared secret used to verify GitHub workflow webhooks.    |
 
 \* At least one repository source must exist: `GITHUB_ORG`, `GITHUB_REPOS`, or a
-group in `observer.config.json`.
+group in `observer.config.yml`.
 
-## Folders (`observer.config.json`)
+## Folders (`observer.config.yml`)
 
 To organise the view — and filter out repositories that are not relevant —
-create an optional `observer.config.json` at the project root
-(see `observer.config.example.json`):
+create an optional `observer.config.yml` at the project root
+(see `observer.config.example.yml`):
 
-```json
-{
-  "includeUngrouped": true,
-  "groups": [
-    { "name": "Microservices", "repos": ["auth-service", "coins-service"] },
-    { "name": "Frontends", "repos": ["pool-site"] }
-  ]
-}
+```yaml
+includeUngrouped: true
+groups:
+  - name: Microservices
+    repos: [auth-service, coins-service]
+  - name: Frontends
+    repos: [pool-site]
 ```
 
 - Each group becomes a collapsible folder, in the order listed.
@@ -121,17 +120,15 @@ One repository that does not fit any folder — typically a GitOps/deployment
 repo — can be **pinned** at the very top of the dashboard with a dedicated card
 that highlights the latest pipeline result of each environment side by side:
 
-```json
-{
-  "pinned": {
-    "repo": "gitops",
-    "environments": [
-      { "label": "Staging", "branch": "develop" },
-      { "label": "Production", "branch": "main" }
-    ]
-  },
-  "groups": [ ... ]
-}
+```yaml
+pinned:
+  repo: gitops
+  environments:
+    - label: Staging
+      branch: develop
+    - label: Production
+      branch: main
+groups: [...]
 ```
 
 - `repo` may be bare (owner defaults to `GITHUB_ORG`) or `owner/repo`, and is
@@ -151,7 +148,7 @@ The code is organised in layers so successive additions stay easy to make:
 ```
 src/
   lib/
-    config/      Environment + observer.config.json parsing & validation.
+    config/      Environment + observer.config.yml parsing & validation.
     github/      Typed GitHub REST client, error types, API types.
     pipelines/   Domain model, mappers, aggregation, grouping, composition root.
     format/      Presentation-agnostic formatting helpers.

@@ -25,7 +25,7 @@ app/  (Next.js pages + API routes)
 | Layer                                                     | Responsibility                                                     | May import                        | Must NOT                                   |
 | --------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------- | ------------------------------------------ |
 | [`src/lib/github`](../src/lib/github)                     | HTTP only: auth, query building, error mapping, caching, API types | `config` (types only)             | Know about the domain model or the UI      |
-| [`src/lib/config`](../src/lib/config)                     | Parse & validate env + `observer.config.json`                      | `github` (types only)             | Perform network I/O                        |
+| [`src/lib/config`](../src/lib/config)                     | Parse & validate env + `observer.config.yml`                      | `github` (types only)             | Perform network I/O                        |
 | [`src/lib/pipelines`](../src/lib/pipelines)               | Domain model, mapping, aggregation, grouping, composition root     | `config`, `github`, `format`      | Import from `components`/`app`             |
 | [`src/lib/format`](../src/lib/format)                     | Pure, presentation-agnostic formatting                             | (nothing)                         | Depend on domain or UI                     |
 | [`src/components`](../src/components)                     | Render domain types; dashboard shells reconcile SSE updates        | client-safe `lib/*`               | Call GitHub directly                       |
@@ -47,7 +47,7 @@ evolve without touching the UI, and vice versa.
 | [`lib/github/webhook.ts`](../src/lib/github/webhook.ts)             | HMAC validation + narrow GitHub webhook parsing                              | [github-integration.md](./github-integration.md) |
 | [`lib/live-events.ts`](../src/lib/live-events.ts)                   | Single-instance SSE subscriber registry and publisher                         | [github-integration.md](./github-integration.md) |
 | [`lib/config/index.ts`](../src/lib/config/index.ts)                 | `AppConfig`, `loadConfig`, `resolveRepoEntry`, `ConfigError`                 | [configuration.md](./configuration.md)           |
-| [`lib/config/groups.ts`](../src/lib/config/groups.ts)               | `observer.config.json` loader (`GroupsConfig`, `loadGroupsConfig`)           | [configuration.md](./configuration.md)           |
+| [`lib/config/groups.ts`](../src/lib/config/groups.ts)               | `observer.config.yml` loader (`GroupsConfig`, `loadGroupsConfig`)           | [configuration.md](./configuration.md)           |
 | [`lib/pipelines/types.ts`](../src/lib/pipelines/types.ts)           | Domain types (`PipelineRun`, `RepoPipelines`, `RepoBranchPipelines`, …)      | [domain-model.md](./domain-model.md)             |
 | [`lib/pipelines/mappers.ts`](../src/lib/pipelines/mappers.ts)       | GitHub → domain projection + status normalisation                            | [domain-model.md](./domain-model.md)             |
 | [`lib/pipelines/byPipeline.ts`](../src/lib/pipelines/byPipeline.ts) | Pivot repos → pipelines (`groupByPipeline`)                                  | [domain-model.md](./domain-model.md)             |
@@ -74,7 +74,7 @@ sequenceDiagram
     participant Grp as groupRepositories
 
     Page->>Root: await loadOverview()
-    Root->>Cfg: read env + observer.config.json
+    Root->>Cfg: read env + observer.config.yml
     Cfg-->>Root: AppConfig, GroupsConfig | null
     Root->>Svc: getPipelineOverview(client, config, {extraRepos, discoverOrg})
     Svc->>GH: listOrgRepos (if discoverOrg)
@@ -128,7 +128,7 @@ page.tsx
  ├─ SetupNotice                 (when config is missing/invalid)
  └─ PipelineDashboard
      ├─ StatusSummary           (header counts, visible repos only)
-     ├─ RepoGrid                (flat view — no observer.config.json)
+     ├─ RepoGrid                (flat view — no observer.config.yml)
      └─ RepoGroupSection*       (folder view — one <details> per group)
          └─ RepoGrid → RepoPipelineCard*
 ```

@@ -29,7 +29,7 @@ GITHUB_REPOS=owner/service-a, owner/service-b`}
 
         <p className={styles.hint}>
           Then restart the dev server. See <code>.env.example</code> for all
-          options, and <code>observer.config.example.json</code> to organise
+          options, and <code>observer.config.example.yml</code> to organise
           repositories into folders.
         </p>
       </div>

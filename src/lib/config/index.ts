@@ -104,7 +104,7 @@ function parseRevalidate(raw: string | undefined): number {
  * Load and validate the application configuration from `process.env`.
  *
  * Note: this does not enforce that a repository source exists — repositories may
- * also come from `observer.config.json` groups, so that check lives in the
+ * also come from `observer.config.yml` groups, so that check lives in the
  * composition root (`loadOverview`).
  *
  * @throws {ConfigError} when the token is missing or a value is malformed.
